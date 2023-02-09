@@ -11,6 +11,7 @@ struct agentState_st {
 };
 
 struct entityData_st {
+	unsigned int entityID;
 	Entities entityType;
 	NumberGenerator *entityGenerator;
 };
@@ -36,6 +37,7 @@ protected:
 	struct entityData_st genNewEntity();
 
 	QueueSolution* solution;
+	NumberGenerator* generator;
 	struct agentState_st state;
 	std::vector<struct entityData_st> entityData;
 	std::vector<struct event_data_st> notams;
