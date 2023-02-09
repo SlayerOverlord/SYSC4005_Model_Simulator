@@ -10,6 +10,7 @@ enum Events {
 };
 
 enum Entities {
+	Initialize	= -1,
 	NoEntity	= 0,
 	Component1	= 1,
 	Component2	= 2,

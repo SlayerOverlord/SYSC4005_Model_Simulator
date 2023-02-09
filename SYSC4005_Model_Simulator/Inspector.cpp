@@ -30,7 +30,8 @@ std::vector<struct event_data_st> Inspector::departEvent()
 	std::vector<struct event_data_st> temp_vec;
 	temp_vec.clear();
 
-	if (solution->processSolution(this->state.currentEntity)) {
+	int res = solution->processSolution(this->state.currentEntity);
+	if (res) {
 
 		entityData_st entityData = genNewEntity();
 		this->state.currentEntity = entityData.entityType;
@@ -40,7 +41,7 @@ std::vector<struct event_data_st> Inspector::departEvent()
 		data.event_given = Depart;
 		data.agent_given = this->state.agentID;
 
-		temp_vec.assign(this->notams.begin(), this->notams.end());
+		temp_vec.push_back(this->notams.at(res - 1));
 		temp_vec.push_back(data);
 
 	} else 

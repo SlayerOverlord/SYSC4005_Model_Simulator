@@ -1,4 +1,5 @@
 #include "NumberGenerator.h"
+#include <stdio.h>
 
 double NumberGenerator::generateNumber(int positive)
 {

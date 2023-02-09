@@ -11,7 +11,6 @@ struct agentState_st {
 };
 
 struct entityData_st {
-	unsigned int entityID;
 	Entities entityType;
 	NumberGenerator *entityGenerator;
 };
@@ -30,6 +29,7 @@ public:
 	void setQueueSolution(QueueSolution* solution) { this->solution = solution; }
 	void addToEntityList(struct entityData_st data) { this->entityData.push_back(data); }
 	void setCurrentEntity(Entities currentEntity) { this->state.currentEntity = currentEntity; }
+	void setAgentIdle(int idle_state) { this->state.idle = idle_state; }
 
 	~Agent();
 

@@ -3,12 +3,23 @@
 FET::FET()
 {
     this->nextEvent = nullptr;
+    this->time_lim = 100;
+}
+
+FET::FET(double time_lim)
+{
+    this->nextEvent = nullptr;
+    this->time_lim = time_lim;
 }
 
 int FET::addEvent(struct event_data_st event_in)
 {
     if (this->nextEvent == nullptr) {
         this->nextEvent = new eventNode(event_in);
+        return 0;
+    }
+
+    if (event_in.time > time_lim) {
         return 0;
     }
     

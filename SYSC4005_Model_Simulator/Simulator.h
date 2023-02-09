@@ -52,9 +52,12 @@ public:
 private:
 	int init();
 	int simPass();
-	Agent getAgent(Agents agent);
+	void printState();
 	void printStats();
 	void setProcessingEvent(Events event_given, Agents agent_given, double time_given);
+	void createComponent(Entities entity, int mean, int std_dist);
+	void createInspector(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
+	void createWorker(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
 
 	struct modelParameters_st parameters;
 };

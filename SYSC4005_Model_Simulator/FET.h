@@ -5,6 +5,7 @@ class FET
 {
 public:
 	FET();
+	FET(double time_lim);
 
 	int addEvent(struct event_data_st event_in);
 	int getNextEvent(struct event_data_st* event_out);
@@ -24,5 +25,6 @@ private:
 	};
 
 	eventNode* nextEvent;
+	double time_lim;
 };
 

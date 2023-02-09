@@ -53,10 +53,10 @@ int ShortPrio::processSolution(int data)
 	if (length >= MAX_QUEUE_SIZE)
 		position = 0;
 	else
-		this->occupancy->at(position - 1) --;
+		this->occupancy->at(position - 1) ++;
 
 	length = 0;
-	return position != 0;
+	return position;
 }
 
 int FirstQueue::processSolution(int data)
@@ -85,7 +85,7 @@ int FirstQueue::processSolution(int data)
 		this->occupancy->at(position - 1) ++;
 
 	length = 0;
-	return position != 0;
+	return position;
 }
 
 int WorkerQueue::processSolution(int data)
