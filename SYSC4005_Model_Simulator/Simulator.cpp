@@ -31,7 +31,8 @@ void Simulator::launchSimulator()
 	
 	while (this->simPass());
 
-	this->parameters.modelTime = this->parameters.processingEvent.time;
+	this->parameters.deltaTime = this->parameters.modelTime;
+	this->parameters.modelTime = this->parameters.boba_fet->getFinalTime();
 	this->parameters.deltaTime = this->parameters.modelTime - this->parameters.deltaTime;
 
 	updateStats();

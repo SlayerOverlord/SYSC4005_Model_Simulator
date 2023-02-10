@@ -9,6 +9,7 @@ public:
 
 	int addEvent(struct event_data_st event_in);
 	int getNextEvent(struct event_data_st* event_out);
+	double getFinalTime() { return this->time_lim; }
 
 	~FET();
 
