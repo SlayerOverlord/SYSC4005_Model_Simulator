@@ -9,6 +9,7 @@
 #include "Worker.h"
 #include "Inspector.h"
 
+// Tracked Simulation parameters and statistics
 struct modelParameters_st {
 
 	// Clock
@@ -39,6 +40,7 @@ class Simulator
 public:
 
 	Simulator();
+	Simulator(double time_lim);
 
 	void launchSimulator();
 
@@ -49,6 +51,7 @@ private:
 	int simPass();
 	void printState();
 	void printStats();
+	void clearParams();
 	void updateStats();
 	void setProcessingEvent(Events event_given, Agents agent_given, double time_given);
 	void createComponent(Entities entity, int mean, int std_dist);

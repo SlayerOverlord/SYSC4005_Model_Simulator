@@ -1,25 +1,38 @@
 #include "FET.h"
 
+/*
+* Default Constructor for the FET
+* Default timelimit of 100 seconds
+*/
 FET::FET()
 {
     this->nextEvent = nullptr;
     this->time_lim = 100;
 }
 
+/*
+* Constructor with definable time limit
+*/
 FET::FET(double time_lim)
 {
     this->nextEvent = nullptr;
     this->time_lim = time_lim;
 }
 
+/*
+* Adds an event to the FET, inserts the event between the last event to occur
+* before the designated time, and the next event to occur after the designated
+* time.
+*/
 int FET::addEvent(struct event_data_st event_in)
 {
-    if (this->nextEvent == nullptr) {
-        this->nextEvent = new eventNode(event_in);
+    // Guard Clauses
+    if (event_in.time > time_lim) {
         return 0;
     }
 
-    if (event_in.time > time_lim) {
+    if (this->nextEvent == nullptr) {
+        this->nextEvent = new eventNode(event_in);
         return 0;
     }
     
@@ -35,6 +48,7 @@ int FET::addEvent(struct event_data_st event_in)
 
     eventNode* curr_ptr = this->nextEvent;
 
+    // Find the location to insert the event
     while (1) {
         if (curr_ptr->next == nullptr) {
             curr_ptr->next = temp_ptr;
@@ -56,6 +70,9 @@ int FET::addEvent(struct event_data_st event_in)
     }
 }
 
+/*
+* Get the next event to occur in the simulation.
+*/
 int FET::getNextEvent(struct event_data_st* event_out)
 {
     if (this->nextEvent == nullptr)
@@ -71,6 +88,10 @@ int FET::getNextEvent(struct event_data_st* event_out)
     return 0;
 }
 
+/*
+* Default Destructor, clears the FET and sets default parameters
+* before being destroyed.
+*/
 FET::~FET()
 {
     if (this->nextEvent == nullptr)
@@ -92,12 +113,18 @@ FET::~FET()
     return;
 }
 
+/*
+* Creates an event node for the FET
+*/
 FET::eventNode::eventNode(struct event_data_st event_in)
 {
     this->data = event_in;
     this->next = nullptr;
 }
 
+/*
+* Destroys an event node
+*/
 FET::eventNode::~eventNode()
 {
     this->data.agent_given = NoAgent;

@@ -1,6 +1,10 @@
 #include "Simulator.h"
 
-
+/*
+* Default Constructor for the simulator
+* Creates a new FET and sets default values
+* for simulation parameters.
+*/
 Simulator::Simulator()
 {
 	this->parameters.boba_fet = new FET();
@@ -20,6 +24,36 @@ Simulator::Simulator()
 	this->parameters.productionAmount.clear();
 }
 
+/*
+* Constructor with timespan of simulation available
+*/
+Simulator::Simulator(double time_lim)
+{
+	this->parameters.boba_fet = new FET(time_lim);
+
+	this->parameters.modelTime = 0;
+	this->parameters.deltaTime = 0;
+	setProcessingEvent(NoEvent, NoAgent, 0);
+
+	this->parameters.solutions.clear();
+	this->parameters.agents.clear();
+	this->parameters.generators.clear();
+	this->parameters.entityData.clear();
+	this->parameters.idle.clear();
+	this->parameters.busyTimes.clear();
+	this->parameters.queueOccupancy.clear();
+	this->parameters.idleProb.clear();
+	this->parameters.productionAmount.clear();
+}
+
+/*
+* Launch simulator perfroms a few actions:
+*	Initalizes the simulation structures such as entities, agents, solutions, ect.
+*	Sets Bootstrapping events to start relevant processes.
+*	Loops through simulations passes until no more events are to be processes.
+*	Collects final statistics and calculates final system statistics.
+*	Outputs the final statistics to the terminal.
+*/
 void Simulator::launchSimulator()
 {
 	init();
@@ -53,34 +87,14 @@ void Simulator::launchSimulator()
 
 }
 
-
-
+/*
+* Default destructor clears all system data and deletes it
+*/
 Simulator::~Simulator()
 {
 	this->parameters.boba_fet->~FET();
 
-	this->parameters.modelTime = 0;
-	this->parameters.deltaTime = 0;
-
-	for (int i = 0; i < this->parameters.agents.size(); i++)
-		this->parameters.agents.at(i)->~Agent();
-	this->parameters.agents.clear();
-
-	for (int i = 0; i < this->parameters.solutions.size(); i++)
-		this->parameters.solutions.at(i)->~QueueSolution();
-	this->parameters.solutions.clear();
-
-	for (int i = 0; i < this->parameters.generators.size(); i++)
-		this->parameters.generators.at(i)->~NumberGenerator();
-	this->parameters.generators.clear();
-
-	this->parameters.queues.clear();
-	this->parameters.entityData.clear();
-	this->parameters.idle.clear();
-	this->parameters.busyTimes.clear();
-	this->parameters.queueOccupancy.clear();
-	this->parameters.idleProb.clear();
-	this->parameters.productionAmount.clear();
+	clearParams();
 
 	this->parameters.queues.~vector();
 	this->parameters.agents.~vector();
@@ -94,8 +108,18 @@ Simulator::~Simulator()
 	this->parameters.productionAmount.~vector();
 }
 
+/*
+* Initializes the simulation environment by setting up the following:
+*	System statistic parameters.
+*	System state parameters.
+*	Entity Data for generating random numbers.
+*	Agent Data for processing events and actions.
+*	Setting queue solutions for future efficiency improvments.
+*/
 int Simulator::init()
 {
+	clearParams();
+
 	// Seting Queues up:
 	this->parameters.queues = { 0, 0, 0, 0, 0 };
 
@@ -208,6 +232,17 @@ int Simulator::init()
 	return 0;
 }
 
+/*
+* Sim pass does the following:
+*	Gets a future event from the FET, if no further events exist, end simulation.
+*	Update the model time to the time of the event and calculate the delta time.
+*	Update the model statistics before modifying the simulation parameters.
+*	Find the Agent relating to the current event.
+*	Get the Agent to process the current event.
+*	If the Agent returned any new events, calculate the time to the events and add
+*		the events to the FET
+*	If in debug mode, print out the state of the system.
+*/
 int Simulator::simPass()
 {
 	std::vector<event_data_st> eventData;
@@ -223,9 +258,6 @@ int Simulator::simPass()
 	updateStats();
 
 	for (int i = 0; i < this->parameters.agents.size(); i++) {
-		if (this->parameters.processingEvent.agent_given == Worker1) {
-			printf("");
-		}
 		if (this->parameters.agents.at(i)->getState().agentID == this->parameters.processingEvent.agent_given) {
 			eventData = this->parameters.agents.at(i)->processEvent(this->parameters.processingEvent);
 			this->parameters.idle.at(i) = this->parameters.agents.at(i)->getState().idle;
@@ -247,6 +279,12 @@ int Simulator::simPass()
 	return 1;
 }
 
+/*
+* Prints some statistics about the model:
+*	Idle states
+*	Current Event being processed
+*	Queue states
+*/
 void Simulator::printState()
 {
 	printf("Sim Time: %f\n", this->parameters.modelTime);
@@ -267,18 +305,24 @@ void Simulator::printState()
 	printf("\n");
 }
 
+/*
+* Prints the final statistics of the model:
+*	Component and Part production rates
+*	Worker and Inspector Idle and Busy Probabilities
+*	Average Queue Occupancies
+*/
 void Simulator::printStats()
 {
 
 	printf("---------------<Final Statistics>---------------\n");
 	printf("Total Time: %13.3fs\n\n", this->parameters.modelTime);
 	printf("Production Per Minute:\n");
-	printf("\tComponent1: %5.2f comp/s\n", this->parameters.productionAmount.at(Component1) / this->parameters.modelTime);
-	printf("\tComponent2: %5.2f comp/s\n", this->parameters.productionAmount.at(Component2) / this->parameters.modelTime);
-	printf("\tComponent3: %5.2f comp/s\n", this->parameters.productionAmount.at(Component3) / this->parameters.modelTime);
-	printf("\tPart1-----: %5.2f part/s\n", this->parameters.productionAmount.at(Part1)	   / this->parameters.modelTime);
-	printf("\tPart2-----: %5.2f part/s\n", this->parameters.productionAmount.at(Part2)	   / this->parameters.modelTime);
-	printf("\tPart3-----: %5.2f part/s\n\n", this->parameters.productionAmount.at(Part3)	   / this->parameters.modelTime);
+	printf("\tComponent1: %5.2f comp/min\n", this->parameters.productionAmount.at(Component1) / (this->parameters.modelTime / 60));
+	printf("\tComponent2: %5.2f comp/min\n", this->parameters.productionAmount.at(Component2) / (this->parameters.modelTime / 60));
+	printf("\tComponent3: %5.2f comp/min\n", this->parameters.productionAmount.at(Component3) / (this->parameters.modelTime / 60));
+	printf("\tPart1-----: %5.2f part/min\n", this->parameters.productionAmount.at(Part1)	  / (this->parameters.modelTime / 60));
+	printf("\tPart2-----: %5.2f part/min\n", this->parameters.productionAmount.at(Part2)	  / (this->parameters.modelTime / 60));
+	printf("\tPart3-----: %5.2f part/min\n\n", this->parameters.productionAmount.at(Part3)	  / (this->parameters.modelTime / 60));
 
 	printf("Idle and Busy Probability:\n");
 	printf("\tInspector1) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(0), this->parameters.busyTimes.at(0));
@@ -287,15 +331,47 @@ void Simulator::printStats()
 	printf("\t   Worker2) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(3), this->parameters.busyTimes.at(3));
 	printf("\t   Worker3) Idle: %1.4f, Busy: %1.4f\n\n", this->parameters.idleProb.at(4), this->parameters.busyTimes.at(4));
 
-	printf("Queue Occupancies:\n");
-	printf("\tQueue C1-1: %1.4f\n", this->parameters.queueOccupancy.at(0));
-	printf("\tQueue C1-2: %1.4f\n", this->parameters.queueOccupancy.at(1));
-	printf("\tQueue C1-3: %1.4f\n", this->parameters.queueOccupancy.at(2));
-	printf("\tQueue C2-1: %1.4f\n", this->parameters.queueOccupancy.at(3));
-	printf("\tQueue C3-1: %1.4f\n", this->parameters.queueOccupancy.at(4));
+	printf("Average Queue Occupancies:\n");
+	printf("\tQueue C1-1: %1.4f Components\n", this->parameters.queueOccupancy.at(0));
+	printf("\tQueue C1-2: %1.4f Components\n", this->parameters.queueOccupancy.at(1));
+	printf("\tQueue C1-3: %1.4f Components\n", this->parameters.queueOccupancy.at(2));
+	printf("\tQueue C2-1: %1.4f Components\n", this->parameters.queueOccupancy.at(3));
+	printf("\tQueue C3-1: %1.4f Components\n", this->parameters.queueOccupancy.at(4));
 	printf("------------------------------------------------\n");
 }
 
+/*
+* Sets system parameters to defaults
+*/
+void Simulator::clearParams()
+{
+	this->parameters.modelTime = 0;
+	this->parameters.deltaTime = 0;
+
+	for (int i = 0; i < this->parameters.agents.size(); i++)
+		this->parameters.agents.at(i)->~Agent();
+	this->parameters.agents.clear();
+
+	for (int i = 0; i < this->parameters.solutions.size(); i++)
+		this->parameters.solutions.at(i)->~QueueSolution();
+	this->parameters.solutions.clear();
+
+	for (int i = 0; i < this->parameters.generators.size(); i++)
+		this->parameters.generators.at(i)->~NumberGenerator();
+	this->parameters.generators.clear();
+
+	this->parameters.queues.clear();
+	this->parameters.entityData.clear();
+	this->parameters.idle.clear();
+	this->parameters.busyTimes.clear();
+	this->parameters.queueOccupancy.clear();
+	this->parameters.idleProb.clear();
+	this->parameters.productionAmount.clear();
+}
+
+/*
+* Code to set the current event to process
+*/
 void Simulator::setProcessingEvent(Events event_given, Agents agent_given, double time_given)
 {
 	this->parameters.processingEvent.agent_given = agent_given;
@@ -303,6 +379,9 @@ void Simulator::setProcessingEvent(Events event_given, Agents agent_given, doubl
 	this->parameters.processingEvent.time		 = time_given;
 }
 
+/*
+* Code to create a component with probability specifications
+*/
 void Simulator::createComponent(Entities entity, int mean, int std_dist)
 {
 	NumberGenerator* gen_ptr = new NumberGenerator(mean, std_dist);
@@ -313,6 +392,15 @@ void Simulator::createComponent(Entities entity, int mean, int std_dist)
 	this->parameters.entityData.push_back(ent_data);
 }
 
+/*
+* Creates an inspector with the designated parameters:
+*	agent:		What agent is this Inspector?
+*	starting:	What entity is the agent first using?
+*	data:		Properties of each component/part the agent works on (processing times and types)
+*	notams:		Who to notify when placing an entity into a queue
+*	idle_init:	Does the agent start idle or busy?
+*	solution:	How does the Agent find what queue to place the entity into?
+*/
 void Simulator::createInspector(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution)
 {
 	Agent* agent_ptr = new Inspector(agent, agent);
@@ -332,6 +420,15 @@ void Simulator::createInspector(Agents agent, Entities starting, std::vector<ent
 	this->parameters.idle.push_back(agent_ptr->getState().idle);
 }
 
+/*
+* Creates a worker with the designated parameters:
+*	agent:		What agent is this Inspector?
+*	starting:	What entity is the agent first using?
+*	data:		Properties of each component/part the agent works on (processing times and types)
+*	notams:		Who to notify when placing an entity into a queue
+*	idle_init:	Does the agent start idle or busy?
+*	solution:	How does the Agent find what queue to place the entity into?
+*/
 void Simulator::createWorker(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution)
 {
 	Agent* agent_ptr = new Worker(agent, agent);
@@ -351,6 +448,9 @@ void Simulator::createWorker(Agents agent, Entities starting, std::vector<entity
 	this->parameters.idle.push_back(agent_ptr->getState().idle);
 }
 
+/*
+* Updates the tracked statistics that aren't automatically updated
+*/
 void Simulator::updateStats()
 {
 	for (int i = 0; i < this->parameters.agents.size(); i++) {
