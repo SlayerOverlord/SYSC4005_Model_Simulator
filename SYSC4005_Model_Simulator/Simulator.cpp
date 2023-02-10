@@ -270,21 +270,21 @@ void Simulator::printStats()
 {
 
 	printf("---------------<Final Statistics>---------------\n");
-
+	printf("Total Time: %13.3fs\n\n", this->parameters.modelTime);
 	printf("Production Per Minute:\n");
-	printf("\tComponent1: %5.2f\n", this->parameters.productionAmount.at(Component1) / this->parameters.modelTime);
-	printf("\tComponent2: %5.2f\n", this->parameters.productionAmount.at(Component2) / this->parameters.modelTime);
-	printf("\tComponent3: %5.2f\n", this->parameters.productionAmount.at(Component3) / this->parameters.modelTime);
-	printf("\tPart1-----: %5.2f\n", this->parameters.productionAmount.at(Part1)	   / this->parameters.modelTime);
-	printf("\tPart2-----: %5.2f\n", this->parameters.productionAmount.at(Part2)	   / this->parameters.modelTime);
-	printf("\tPart3-----: %5.2f\n", this->parameters.productionAmount.at(Part3)	   / this->parameters.modelTime);
+	printf("\tComponent1: %5.2f comp/s\n", this->parameters.productionAmount.at(Component1) / this->parameters.modelTime);
+	printf("\tComponent2: %5.2f comp/s\n", this->parameters.productionAmount.at(Component2) / this->parameters.modelTime);
+	printf("\tComponent3: %5.2f comp/s\n", this->parameters.productionAmount.at(Component3) / this->parameters.modelTime);
+	printf("\tPart1-----: %5.2f part/s\n", this->parameters.productionAmount.at(Part1)	   / this->parameters.modelTime);
+	printf("\tPart2-----: %5.2f part/s\n", this->parameters.productionAmount.at(Part2)	   / this->parameters.modelTime);
+	printf("\tPart3-----: %5.2f part/s\n\n", this->parameters.productionAmount.at(Part3)	   / this->parameters.modelTime);
 
 	printf("Idle and Busy Probability:\n");
 	printf("\tInspector1) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(0), this->parameters.busyTimes.at(0));
 	printf("\tInspector2) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(1), this->parameters.busyTimes.at(1));
-	printf("\tWorker1)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(2), this->parameters.busyTimes.at(2));
-	printf("\tWorker2)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(3), this->parameters.busyTimes.at(3));
-	printf("\tWorker3)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(4), this->parameters.busyTimes.at(4));
+	printf("\t   Worker1) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(2), this->parameters.busyTimes.at(2));
+	printf("\t   Worker2) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(3), this->parameters.busyTimes.at(3));
+	printf("\t   Worker3) Idle: %1.4f, Busy: %1.4f\n\n", this->parameters.idleProb.at(4), this->parameters.busyTimes.at(4));
 
 	printf("Queue Occupancies:\n");
 	printf("\tQueue C1-1: %1.4f\n", this->parameters.queueOccupancy.at(0));
@@ -292,7 +292,7 @@ void Simulator::printStats()
 	printf("\tQueue C1-3: %1.4f\n", this->parameters.queueOccupancy.at(2));
 	printf("\tQueue C2-1: %1.4f\n", this->parameters.queueOccupancy.at(3));
 	printf("\tQueue C3-1: %1.4f\n", this->parameters.queueOccupancy.at(4));
-	printf("------------------------------------------------\n\n");
+	printf("------------------------------------------------\n");
 }
 
 void Simulator::setProcessingEvent(Events event_given, Agents agent_given, double time_given)
