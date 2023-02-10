@@ -4,18 +4,21 @@ QueueSolution::QueueSolution(unsigned int availableQueues[], unsigned int size)
 {
 	setAvailable(availableQueues, size);
 	this->occupancy = nullptr;
+	this->setup = 1;
 }
 
 QueueSolution::QueueSolution()
 {
 	availableQueues.clear();
 	this->occupancy = nullptr;
+	this->setup = 1;
 }
 
 QueueSolution::QueueSolution(std::vector<unsigned int> availableQueues)
 {
 	setAvailable(availableQueues);
 	this->occupancy = nullptr;
+	this->setup = 1;
 }
 
 void QueueSolution::setAvailable(unsigned int availableQueues[], unsigned int size)
@@ -52,8 +55,11 @@ int ShortPrio::processSolution(int data)
 
 	if (length >= MAX_QUEUE_SIZE)
 		position = 0;
-	else
-		this->occupancy->at(position - 1) ++;
+	else if (!this->setup) {
+		this->occupancy->at(position - 1)++;
+	}
+
+	this->setup = 0;
 
 	length = 0;
 	return position;
@@ -81,8 +87,9 @@ int FirstQueue::processSolution(int data)
 		}
 	}
 
-	if (position != 0)
+	if (position != 0 && !this->setup)
 		this->occupancy->at(position - 1) ++;
+	this->setup = 0;
 
 	length = 0;
 	return position;

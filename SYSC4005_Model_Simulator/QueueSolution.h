@@ -18,6 +18,7 @@ public:
 	~QueueSolution();
 
 protected:
+	int setup;
 	std::vector<unsigned int>* occupancy;
 	std::vector<unsigned int> availableQueues;
 };

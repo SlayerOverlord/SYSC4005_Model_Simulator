@@ -34,6 +34,7 @@ std::vector<struct event_data_st> Worker::departEvent()
 
 		entityData_st entityData = genNewEntity();
 		this->state.currentEntity = entityData.entityType;
+		this->produced->at(entityData.entityType) ++;
 
 		event_data_st data;
 		data.time = entityData.entityGenerator->generateNumber(1);

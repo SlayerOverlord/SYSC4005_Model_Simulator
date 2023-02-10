@@ -30,6 +30,7 @@ public:
 	void addToEntityList(struct entityData_st data) { this->entityData.push_back(data); }
 	void setCurrentEntity(Entities currentEntity) { this->state.currentEntity = currentEntity; }
 	void setAgentIdle(int idle_state) { this->state.idle = idle_state; }
+	void setProductionTarget(std::vector<unsigned int>* production) { this->produced = production; }
 
 	~Agent();
 
@@ -41,5 +42,6 @@ protected:
 	struct agentState_st state;
 	std::vector<struct entityData_st> entityData;
 	std::vector<struct event_data_st> notams;
+	std::vector<unsigned int>* produced;
 };
 

@@ -1,5 +1,6 @@
 #include "Simulator.h"
 
+
 Simulator::Simulator()
 {
 	this->parameters.boba_fet = new FET();
@@ -7,6 +8,16 @@ Simulator::Simulator()
 	this->parameters.modelTime = 0;
 	this->parameters.deltaTime = 0;
 	setProcessingEvent(NoEvent, NoAgent, 0);
+
+	this->parameters.solutions.clear();
+	this->parameters.agents.clear();
+	this->parameters.generators.clear();
+	this->parameters.entityData.clear();
+	this->parameters.idle.clear();
+	this->parameters.busyTimes.clear();
+	this->parameters.queueOccupancy.clear();
+	this->parameters.idleProb.clear();
+	this->parameters.productionAmount.clear();
 }
 
 void Simulator::launchSimulator()
@@ -18,8 +29,26 @@ void Simulator::launchSimulator()
 	setProcessingEvent(Depart, Inspector2, 0);
 	this->parameters.boba_fet->addEvent(this->parameters.processingEvent);
 	
-	printState();
 	while (this->simPass());
+
+	this->parameters.modelTime = this->parameters.processingEvent.time;
+	this->parameters.deltaTime = this->parameters.modelTime - this->parameters.deltaTime;
+
+	updateStats();
+
+	for (int i = 0; i < this->parameters.productionAmount.size(); i++)
+		this->parameters.productionAmount.at(i)--;
+
+	for (int i = 0; i < this->parameters.busyTimes.size(); i++)
+		this->parameters.busyTimes.at(i) /= this->parameters.modelTime;
+
+	for (int i = 0; i < this->parameters.idleProb.size(); i ++)
+		this->parameters.idleProb.at(i) /= this->parameters.modelTime;
+
+	for (int i = 0; i < this->parameters.queueOccupancy.size(); i++)
+		this->parameters.queueOccupancy.at(i) /= this->parameters.modelTime;
+
+	printStats();
 
 }
 
@@ -31,20 +60,6 @@ Simulator::~Simulator()
 
 	this->parameters.modelTime = 0;
 	this->parameters.deltaTime = 0;
-	this->parameters.processing.~vector();
-	this->parameters.queues.~vector();
-	this->parameters.idle.~vector();
-
-	this->parameters.agents.clear();
-	this->parameters.agents.~vector();
-
-/*
-* 	std::vector<Agent*>				agents;
-	std::vector<QueueSolution*>		solutions;
-	std::vector<NumberGenerator*>	generators;
-	std::vector<entityData_st>		entityData;
-	std::vector<event_data_st>		notams;
-*/
 
 	for (int i = 0; i < this->parameters.agents.size(); i++)
 		this->parameters.agents.at(i)->~Agent();
@@ -58,12 +73,24 @@ Simulator::~Simulator()
 		this->parameters.generators.at(i)->~NumberGenerator();
 	this->parameters.generators.clear();
 
+	this->parameters.queues.clear();
 	this->parameters.entityData.clear();
+	this->parameters.idle.clear();
+	this->parameters.busyTimes.clear();
+	this->parameters.queueOccupancy.clear();
+	this->parameters.idleProb.clear();
+	this->parameters.productionAmount.clear();
 
+	this->parameters.queues.~vector();
 	this->parameters.agents.~vector();
 	this->parameters.solutions.~vector();
 	this->parameters.generators.~vector();
 	this->parameters.entityData.~vector();
+	this->parameters.idle.~vector();
+	this->parameters.busyTimes.~vector();
+	this->parameters.queueOccupancy.~vector();
+	this->parameters.idleProb.~vector();
+	this->parameters.productionAmount.~vector();
 }
 
 int Simulator::init()
@@ -71,6 +98,10 @@ int Simulator::init()
 	// Seting Queues up:
 	this->parameters.queues = { 0, 0, 0, 0, 0 };
 
+	this->parameters.busyTimes.assign(this->parameters.queues.begin(), this->parameters.queues.end());
+	this->parameters.queueOccupancy.assign(this->parameters.queues.begin(), this->parameters.queues.end());
+	this->parameters.idleProb.assign(this->parameters.queues.begin(), this->parameters.queues.end());
+	this->parameters.productionAmount = { 0, 0, 0, 0, 0, 0, 0 };
 	createComponent(NoEntity, 1, 0);
 
 	// Components
@@ -188,6 +219,7 @@ int Simulator::simPass()
 
 	this->parameters.modelTime = this->parameters.processingEvent.time;
 	this->parameters.deltaTime = this->parameters.modelTime - this->parameters.deltaTime;
+	updateStats();
 
 	for (int i = 0; i < this->parameters.agents.size(); i++) {
 		if (this->parameters.processingEvent.agent_given == Worker1) {
@@ -207,8 +239,9 @@ int Simulator::simPass()
 				this->parameters.boba_fet->addEvent(eventData.at(i));
 		}
 	}
-
+#ifdef _DEBUG
 	printState();
+#endif
 
 	return 1;
 }
@@ -231,6 +264,35 @@ void Simulator::printState()
 		printf("\t%d\n", this->parameters.queues.at(i));
 
 	printf("\n");
+}
+
+void Simulator::printStats()
+{
+
+	printf("---------------<Final Statistics>---------------\n");
+
+	printf("Production Per Minute:\n");
+	printf("\tComponent1: %5.2f\n", this->parameters.productionAmount.at(Component1) / this->parameters.modelTime);
+	printf("\tComponent2: %5.2f\n", this->parameters.productionAmount.at(Component2) / this->parameters.modelTime);
+	printf("\tComponent3: %5.2f\n", this->parameters.productionAmount.at(Component3) / this->parameters.modelTime);
+	printf("\tPart1-----: %5.2f\n", this->parameters.productionAmount.at(Part1)	   / this->parameters.modelTime);
+	printf("\tPart2-----: %5.2f\n", this->parameters.productionAmount.at(Part2)	   / this->parameters.modelTime);
+	printf("\tPart3-----: %5.2f\n", this->parameters.productionAmount.at(Part3)	   / this->parameters.modelTime);
+
+	printf("Idle and Busy Probability:\n");
+	printf("\tInspector1) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(0), this->parameters.busyTimes.at(0));
+	printf("\tInspector2) Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(1), this->parameters.busyTimes.at(1));
+	printf("\tWorker1)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(2), this->parameters.busyTimes.at(2));
+	printf("\tWorker2)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(3), this->parameters.busyTimes.at(3));
+	printf("\tWorker3)--- Idle: %1.4f, Busy: %1.4f\n", this->parameters.idleProb.at(4), this->parameters.busyTimes.at(4));
+
+	printf("Queue Occupancies:\n");
+	printf("\tQueue C1-1: %1.4f\n", this->parameters.queueOccupancy.at(0));
+	printf("\tQueue C1-2: %1.4f\n", this->parameters.queueOccupancy.at(1));
+	printf("\tQueue C1-3: %1.4f\n", this->parameters.queueOccupancy.at(2));
+	printf("\tQueue C2-1: %1.4f\n", this->parameters.queueOccupancy.at(3));
+	printf("\tQueue C3-1: %1.4f\n", this->parameters.queueOccupancy.at(4));
+	printf("------------------------------------------------\n\n");
 }
 
 void Simulator::setProcessingEvent(Events event_given, Agents agent_given, double time_given)
@@ -263,6 +325,7 @@ void Simulator::createInspector(Agents agent, Entities starting, std::vector<ent
 	agent_ptr->setQueueSolution(solution);
 	agent_ptr->setCurrentEntity(starting);
 	agent_ptr->setAgentIdle(idle_init);
+	agent_ptr->setProductionTarget(&(this->parameters.productionAmount));
 
 	this->parameters.agents.push_back(agent_ptr);
 	this->parameters.idle.push_back(agent_ptr->getState().idle);
@@ -281,7 +344,19 @@ void Simulator::createWorker(Agents agent, Entities starting, std::vector<entity
 	agent_ptr->setQueueSolution(solution);
 	agent_ptr->setCurrentEntity(starting);
 	agent_ptr->setAgentIdle(idle_init);
+	agent_ptr->setProductionTarget(&(this->parameters.productionAmount));
 
 	this->parameters.agents.push_back(agent_ptr);
 	this->parameters.idle.push_back(agent_ptr->getState().idle);
+}
+
+void Simulator::updateStats()
+{
+	for (int i = 0; i < this->parameters.agents.size(); i++) {
+		this->parameters.idleProb.at(i) += this->parameters.agents.at(i)->getState().idle * this->parameters.deltaTime;
+		this->parameters.busyTimes.at(i) += !this->parameters.agents.at(i)->getState().idle * this->parameters.deltaTime;
+	}
+
+	for (int i = 0; i < this->parameters.queues.size(); i++)
+		this->parameters.queueOccupancy.at(i) += this->parameters.queues.at(i) * this->parameters.deltaTime;
 }

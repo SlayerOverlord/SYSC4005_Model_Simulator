@@ -9,10 +9,6 @@
 #include "Worker.h"
 #include "Inspector.h"
 
-#define NUM_QUEUES 5
-#define NUM_AGENTS 5
-#define NUM_PARTS 3
-
 struct modelParameters_st {
 
 	// Clock
@@ -27,13 +23,12 @@ struct modelParameters_st {
 
 	// State
 	std::vector<unsigned int> queues, idle;
-	std::vector<struct event_data_st> processing;
 
 	// Stats
-	double busyTimes[NUM_AGENTS];
-	double queueOccupancy[NUM_QUEUES];
-	double partThroughput[NUM_PARTS];
-	double idleProb[NUM_AGENTS];
+	std::vector<double> busyTimes;
+	std::vector<double> queueOccupancy;
+	std::vector<double> idleProb;
+	std::vector<unsigned int> productionAmount;
 
 	// Future Event Table
 	FET* boba_fet;
@@ -54,6 +49,7 @@ private:
 	int simPass();
 	void printState();
 	void printStats();
+	void updateStats();
 	void setProcessingEvent(Events event_given, Agents agent_given, double time_given);
 	void createComponent(Entities entity, int mean, int std_dist);
 	void createInspector(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
