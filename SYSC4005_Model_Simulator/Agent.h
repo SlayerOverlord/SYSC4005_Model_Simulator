@@ -5,9 +5,12 @@
 
 struct agentState_st {
 	Entities currentEntity;
+	Entities priorEntity;
 	Agents agentID;
 	unsigned int id;
 	int idle;
+	double productionTime;
+	double lastProductionTime;
 };
 
 struct entityData_st {
@@ -23,7 +26,8 @@ public:
 	Agent(Agents agent);
 	Agent(int id, Agents agent);
 
-	virtual std::vector<struct event_data_st> processEvent(struct event_data_st event_to_process) = 0;
+	virtual std::vector<struct event_data_st> processEvent(struct event_data_st event_to_process, double currentTime) = 0;
+
 	struct agentState_st getState() { return this->state; }
 	void addNotams(Agents notams);
 	void setQueueSolution(QueueSolution* solution) { this->solution = solution; }
@@ -31,12 +35,15 @@ public:
 	void setCurrentEntity(Entities currentEntity) { this->state.currentEntity = currentEntity; }
 	void setAgentIdle(int idle_state) { this->state.idle = idle_state; }
 	void setProductionTarget(std::vector<unsigned int>* production) { this->produced = production; }
+	bool newEntityProduced() { if (newEntityInSystem) { newEntityInSystem = false; return true; } else { return false; } };
+	void setLastProductionTime(double time) { this->state.lastProductionTime = time; }
 
 	~Agent();
 
 protected:
 	struct entityData_st genNewEntity();
 
+	bool newEntityInSystem;
 	QueueSolution* solution;
 	NumberGenerator* generator;
 	struct agentState_st state;

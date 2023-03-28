@@ -32,5 +32,6 @@ enum Agents {
 struct event_data_st {
 	Events event_given;
 	Agents agent_given;
+	double time_start;
 	double time;
 };

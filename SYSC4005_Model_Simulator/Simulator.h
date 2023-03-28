@@ -23,13 +23,19 @@ struct modelParameters_st {
 	std::vector<entityData_st>		entityData;
 
 	// State
-	std::vector<unsigned int> queues, idle;
+	std::vector<unsigned int> queues, priorQueueState, idle;
+	std::vector<Entities> queueMapping;
+	std::vector<std::vector<double>> inputTimes;
 
 	// Stats
 	std::vector<double> busyTimes;
 	std::vector<double> queueOccupancy;
 	std::vector<double> idleProb;
 	std::vector<unsigned int> productionAmount;
+
+	std::vector<double> inputRate;
+	std::vector<double> itemsInSystem;
+	std::vector<double> averageTime;
 
 	// Future Event Table
 	FET* boba_fet;

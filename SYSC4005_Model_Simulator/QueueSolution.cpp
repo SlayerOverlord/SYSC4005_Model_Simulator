@@ -33,7 +33,7 @@ QueueSolution::~QueueSolution()
 	this->occupancy = nullptr;
 }
 
-int ShortPrio::processSolution(int data)
+int ShortPrio::processSolution(int data, double currentTime)
 {
 	if (this->occupancy == nullptr)
 		return 0;
@@ -57,6 +57,7 @@ int ShortPrio::processSolution(int data)
 		position = 0;
 	else if (!this->setup) {
 		this->occupancy->at(position - 1)++;
+		this->inputTImes->at(position - 1).at(this->occupancy->at(position - 1) - 1) = currentTime;
 	}
 
 	this->setup = 0;
@@ -65,7 +66,7 @@ int ShortPrio::processSolution(int data)
 	return position;
 }
 
-int FirstQueue::processSolution(int data)
+int FirstQueue::processSolution(int data, double currentTime)
 {
 	if (this->occupancy == nullptr)
 		return 0;
@@ -88,14 +89,18 @@ int FirstQueue::processSolution(int data)
 	}
 
 	if (position != 0 && !this->setup)
-		this->occupancy->at(position - 1) ++;
+	{
+		this->occupancy->at(position - 1)++;
+		this->inputTImes->at(position - 1).at(this->occupancy->at(position - 1) - 1) = currentTime;
+	}
+
 	this->setup = 0;
 
 	length = 0;
 	return position;
 }
 
-int WorkerQueue::processSolution(int data)
+int WorkerQueue::processSolution(int data, double currentTime)
 {
 	if (this->occupancy == nullptr)
 		return 0;

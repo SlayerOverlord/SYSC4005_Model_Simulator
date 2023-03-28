@@ -3,14 +3,19 @@
 Agent::Agent()
 {
 	this->state.currentEntity = NoEntity;
+	this->state.priorEntity = NoEntity;
 	this->state.agentID = NoAgent;
 	this->state.id = 0;
 	this->state.idle = 0;
+	this->state.productionTime = 0;
+	this->state.lastProductionTime = 0;
 
 	this->entityData.clear();
 	this->notams.clear();
 
 	this->solution = nullptr;
+
+	this->newEntityInSystem = false;
 }
 
 Agent::Agent(int id)
@@ -66,9 +71,12 @@ void Agent::addNotams(Agents notams)
 Agent::~Agent()
 {
 	this->state.currentEntity = NoEntity;
+	this->state.priorEntity = NoEntity;
 	this->state.agentID = NoAgent;
 	this->state.id = 0;
 	this->state.idle = 0;
+	this->state.productionTime = 0;
+	this->state.lastProductionTime = 0;
 
 	this->entityData.clear();
 	this->notams.clear();
@@ -77,6 +85,7 @@ Agent::~Agent()
 	this->notams.~vector();
 
 	this->solution = nullptr;
+	this->newEntityInSystem = false;
 }
 
 struct entityData_st Agent::genNewEntity()

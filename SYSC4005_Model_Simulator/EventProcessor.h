@@ -5,7 +5,7 @@
 class EventProcessor
 {
 public:
-	virtual std::vector<struct event_data_st> processEvent(struct event_data_st event_to_process) = 0;
+	virtual std::vector<struct event_data_st> processEvent(struct event_data_st event_to_process, double currentTime) = 0;
 	std::vector<struct event_data_st> getEventList() { return this->eventList; }
 
 protected:

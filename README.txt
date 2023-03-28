@@ -1,0 +1,2 @@
+This program is written using Visual Studio 2022, For best performance, use this version of Visual Studio to run
+Optionally, the files can be manually linked with generic c++ compiler, however, this has not been done previously
