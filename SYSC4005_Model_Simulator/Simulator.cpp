@@ -145,17 +145,17 @@ int Simulator::init()
 	this->parameters.averageTime.assign(this->parameters.productionAmount.begin(), this->parameters.productionAmount.end());
 	this->parameters.inputTimes = { {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0} };
 	this->parameters.queueMapping = { Component1, Component1, Component1, Component2, Component3 };
-	createComponent(NoEntity, 1, 0);
+	createComponent(NoEntity, 1);
 
 	// Components
-	createComponent(Component1, 5, 1);
-	createComponent(Component2, 5, 1);
-	createComponent(Component3, 5, 1);
+	createComponent(Component1, 0.097);
+	createComponent(Component2, 0.064);
+	createComponent(Component3, 0.048);
 
 	// Part 1
-	createComponent(Part1, 7, 5);
-	createComponent(Part2, 7, 5);
-	createComponent(Part3, 7, 5);
+	createComponent(Part1, 0.217);
+	createComponent(Part2, 0.100);
+	createComponent(Part3, 0.114);
 
 	// Inspector 1:
 	QueueSolution* sol_ptr = new ShortPrio();
@@ -504,9 +504,9 @@ void Simulator::setProcessingEvent(Events event_given, Agents agent_given, doubl
 /*
 * Code to create a component with probability specifications
 */
-void Simulator::createComponent(Entities entity, int mean, int std_dist)
+void Simulator::createComponent(Entities entity, double lambda)
 {
-	NumberGenerator* gen_ptr = new NumberGenerator(mean, std_dist);
+	NumberGenerator* gen_ptr = new ExponentialDist(lambda);
 	struct entityData_st ent_data;
 	ent_data.entityGenerator = gen_ptr;
 	ent_data.entityType = entity;

@@ -1,16 +1,51 @@
 #pragma once
 #include <stdlib.h>
+#include <cmath>
 
 class NumberGenerator
 {
 public:
-	NumberGenerator() { this->mean = 0; this->std_dist = 1; }
-	NumberGenerator(double mean, double std_dist) { this->mean = mean; this->std_dist = std_dist; }
+	NumberGenerator() {}
+
+	virtual double generateNumber(int positive) = 0;
+
+	~NumberGenerator() {}
+private:
+};
+
+class LCM
+{
+public:
+	LCM();
+	LCM(unsigned int multiplier, unsigned int increment, unsigned int modulus, unsigned int seed);
+
+	void setMultiplier(unsigned int multiplier) { this->multiplier = multiplier; }
+	void setIncrement(unsigned int increment) { this->increment = increment; }
+	void setModulus(unsigned int modulus) { this->modulus = modulus; }
+	void setSeed(unsigned int seed);
 
 	double generateNumber(int positive);
 
-	~NumberGenerator() { this->mean = 0; this->std_dist = 0; }
+	~LCM();
 private:
-	double mean, std_dist;
+	unsigned int multiplier, increment, modulus;
+	unsigned int value;
 };
 
+class ExponentialDist : public NumberGenerator
+{
+public:
+	ExponentialDist();
+	ExponentialDist(double lambda);
+
+	void setLambda(double lambda);
+	void setSeed(int seed) { this->generator.setSeed(seed); }
+
+	double generateNumber(int positive) override;
+
+	~ExponentialDist();
+
+private:
+	double inv_lambda;
+	LCM generator;
+};

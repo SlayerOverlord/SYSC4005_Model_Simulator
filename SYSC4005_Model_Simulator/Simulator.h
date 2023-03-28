@@ -60,7 +60,7 @@ private:
 	void clearParams();
 	void updateStats();
 	void setProcessingEvent(Events event_given, Agents agent_given, double time_given);
-	void createComponent(Entities entity, int mean, int std_dist);
+	void createComponent(Entities entity, double lambda);
 	void createInspector(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
 	void createWorker(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
 
