@@ -15,7 +15,7 @@ struct agentState_st {
 
 struct entityData_st {
 	Entities entityType;
-	NumberGenerator *entityGenerator;
+	ExponentialDist *entityGenerator;
 };
 
 class Agent : public EventProcessor

@@ -7,21 +7,21 @@
 */
 Simulator::Simulator()
 {
-	this->parameters.boba_fet = new FET();
+	this->data.boba_fet = new FET();
 
-	this->parameters.modelTime = 0;
-	this->parameters.deltaTime = 0;
+	this->data.modelTime = 0;
+	this->data.deltaTime = 0;
 	setProcessingEvent(NoEvent, NoAgent, 0);
 
-	this->parameters.solutions.clear();
-	this->parameters.agents.clear();
-	this->parameters.generators.clear();
-	this->parameters.entityData.clear();
-	this->parameters.idle.clear();
-	this->parameters.busyTimes.clear();
-	this->parameters.queueOccupancy.clear();
-	this->parameters.idleProb.clear();
-	this->parameters.productionAmount.clear();
+	this->data.solutions.clear();
+	this->data.agents.clear();
+	this->data.generators.clear();
+	this->data.entityData.clear();
+	this->data.idle.clear();
+	this->data.busyTimes.clear();
+	this->data.queueOccupancy.clear();
+	this->data.idleProb.clear();
+	this->data.productionAmount.clear();
 }
 
 /*
@@ -29,21 +29,21 @@ Simulator::Simulator()
 */
 Simulator::Simulator(double time_lim)
 {
-	this->parameters.boba_fet = new FET(time_lim);
+	this->data.boba_fet = new FET(time_lim);
 
-	this->parameters.modelTime = 0;
-	this->parameters.deltaTime = 0;
+	this->data.modelTime = 0;
+	this->data.deltaTime = 0;
 	setProcessingEvent(NoEvent, NoAgent, 0);
 
-	this->parameters.solutions.clear();
-	this->parameters.agents.clear();
-	this->parameters.generators.clear();
-	this->parameters.entityData.clear();
-	this->parameters.idle.clear();
-	this->parameters.busyTimes.clear();
-	this->parameters.queueOccupancy.clear();
-	this->parameters.idleProb.clear();
-	this->parameters.productionAmount.clear();
+	this->data.solutions.clear();
+	this->data.agents.clear();
+	this->data.generators.clear();
+	this->data.entityData.clear();
+	this->data.idle.clear();
+	this->data.busyTimes.clear();
+	this->data.queueOccupancy.clear();
+	this->data.idleProb.clear();
+	this->data.productionAmount.clear();
 }
 
 /*
@@ -59,45 +59,143 @@ void Simulator::launchSimulator()
 	init();
 
 	setProcessingEvent(Depart, Inspector1, 0);
-	this->parameters.boba_fet->addEvent(this->parameters.processingEvent);
+	this->data.boba_fet->addEvent(this->data.processingEvent);
 	setProcessingEvent(Depart, Inspector2, 0);
-	this->parameters.boba_fet->addEvent(this->parameters.processingEvent);
+	this->data.boba_fet->addEvent(this->data.processingEvent);
 	
-	while (this->simPass());
+	this->data.priorBatchTimer = 0;
+	this->data.batchTimer = this->data.startupTime;
 
-	this->parameters.deltaTime = this->parameters.modelTime;
-	this->parameters.modelTime = this->parameters.boba_fet->getFinalTime();
-	this->parameters.deltaTime = this->parameters.modelTime - this->parameters.deltaTime;
+	while (this->simPass())
+	{
+		if (this->data.modelTime >= this->data.batchTimer &&
+			this->data.modelTime - this->data.deltaTime <= this->data.batchTimer)
+		{
+			modelData_st newData;
+			newData.batch_time = this->data.modelTime - this->data.priorBatchTimer;
+			
+			for (int i = 0; i < this->data.busyTimes.size(); i++)
+				newData.busyTimes.push_back(this->data.busyTimes.at(i));
+
+			for (int i = 0; i < this->data.idleProb.size(); i++)
+				newData.idleProb.push_back(this->data.idleProb.at(i));
+
+			for (int i = 0; i < this->data.inputRate.size(); i++)
+				newData.inputRate.push_back(this->data.inputRate.at(i));
+
+			for (int i = 0; i < this->data.productionAmount.size(); i++)
+				newData.productionAmount.push_back(this->data.productionAmount.at(i) - 1);
+
+			for (int i = 0; i < this->data.queueOccupancy.size(); i++)
+				newData.queueOccupancy.push_back(this->data.queueOccupancy.at(i));
+
+			for (int i = 0; i < this->data.itemsInSystem.size(); i++)
+				newData.itemsInSystem.push_back(this->data.itemsInSystem.at(i));
+			
+			for (int i = 0; i < this->data.averageTime.size(); i++)
+				newData.averageTime.push_back(this->data.averageTime.at(i));
+
+			this->data.priorBatchTimer = this->data.batchTimer;
+			this->data.batchTimer += this->data.batchTime;
+
+			this->data.data_vector.push_back(newData);
+		}
+	}
+
+	this->data.deltaTime = this->data.modelTime;
+	this->data.modelTime = this->data.boba_fet->getFinalTime();
+	this->data.deltaTime = this->data.modelTime - this->data.deltaTime;
 
 	updateStats();
 
-	for (int i = 0; i < this->parameters.productionAmount.size(); i++)
-		this->parameters.productionAmount.at(i)--;
+	for (int i = 0; i < this->data.productionAmount.size(); i++)
+		this->data.productionAmount.at(i) --;
 
-	for (int i = 0; i < this->parameters.busyTimes.size(); i++)
-		this->parameters.busyTimes.at(i) /= this->parameters.modelTime;
+	for (int i = 0; i < this->data.busyTimes.size(); i++)
+		this->data.busyTimes.at(i) /= this->data.modelTime;
 
-	for (int i = 0; i < this->parameters.idleProb.size(); i ++)
-		this->parameters.idleProb.at(i) /= this->parameters.modelTime;
+	for (int i = 0; i < this->data.idleProb.size(); i ++)
+		this->data.idleProb.at(i) /= this->data.modelTime;
 
-	for (int i = 0; i < this->parameters.queueOccupancy.size(); i++)
-		this->parameters.queueOccupancy.at(i) /= this->parameters.modelTime;
+	for (int i = 0; i < this->data.queueOccupancy.size(); i++)
+		this->data.queueOccupancy.at(i) /= this->data.modelTime;
 
-	for (int i = 0; i < this->parameters.inputRate.size(); i++)
- 		this->parameters.inputRate.at(i) = this->parameters.modelTime / this->parameters.productionAmount.at(i);
+	for (int i = 0; i < this->data.inputRate.size(); i++)
+ 		this->data.inputRate.at(i) = this->data.modelTime / this->data.productionAmount.at(i);
 
-	for (int i = 0; i < this->parameters.itemsInSystem.size(); i++)
-		this->parameters.itemsInSystem.at(i) /= this->parameters.modelTime;
+	for (int i = 0; i < this->data.itemsInSystem.size(); i++)
+		this->data.itemsInSystem.at(i) /= this->data.modelTime;
 
-	for (int i = 0; i < this->parameters.queueOccupancy.size(); i ++)
-		this->parameters.itemsInSystem.at(this->parameters.queueMapping.at(i)) += this->parameters.queueOccupancy.at(i);
+	for (int i = 0; i < this->data.queueOccupancy.size(); i ++)
+		this->data.itemsInSystem.at(this->data.queueMapping.at(i)) += this->data.queueOccupancy.at(i);
 
+	for (int i = 0; i < this->data.averageTime.size(); i++)
+		this->data.averageTime.at(i) /= this->data.productionAmount.at(i);
 
-	for (int i = 0; i < this->parameters.averageTime.size(); i++)
-		this->parameters.averageTime.at(i) /= this->parameters.productionAmount.at(i);
+	modelData_st data;
+	data.averageTime = this->data.averageTime;
+	data.batch_time = this->data.modelTime;
+	data.busyTimes = this->data.busyTimes;
+	data.idleProb = this->data.idleProb;
+	data.inputRate = this->data.inputRate;
+	data.itemsInSystem = this->data.itemsInSystem;
+	data.productionAmount = this->data.productionAmount;
+	data.queueOccupancy = this->data.queueOccupancy;
 
-	printStats();
+	printStats(data);
 
+}
+
+void Simulator::calculateBatchData()
+{
+	for (int i = this->data.data_vector.size() - 1; i > 0 ; i--)
+	{
+		for (int j = 0; j < this->data.busyTimes.size(); j++)
+			this->data.data_vector.at(i).busyTimes.at(j) -= this->data.data_vector.at(i - 1).busyTimes.at(j);
+
+		for (int j = 0; j < this->data.idleProb.size(); j++)
+			this->data.data_vector.at(i).idleProb.at(j) -= this->data.data_vector.at(i - 1).idleProb.at(j);
+
+		for (int j = 0; j < this->data.inputRate.size(); j++)
+			this->data.data_vector.at(i).inputRate.at(j) -= this->data.data_vector.at(i - 1).inputRate.at(j);
+
+		for (int j = 0; j < this->data.productionAmount.size(); j++)
+			this->data.data_vector.at(i).productionAmount.at(j) -= this->data.data_vector.at(i - 1).productionAmount.at(j);
+
+		for (int j = 0; j < this->data.queueOccupancy.size(); j++)
+			this->data.data_vector.at(i).queueOccupancy.at(j) -= this->data.data_vector.at(i - 1).queueOccupancy.at(j);
+
+		for (int j = 0; j < this->data.itemsInSystem.size(); j++)
+			this->data.data_vector.at(i).itemsInSystem.at(j) -= this->data.data_vector.at(i - 1).itemsInSystem.at(j);
+
+		for (int j = 0; j < this->data.averageTime.size(); j++)
+			this->data.data_vector.at(i).averageTime.at(j) -= this->data.data_vector.at(i - 1).averageTime.at(j);
+	}
+
+	for (int i = 0; i <this->data.data_vector.size(); i++)
+	{
+
+		for (int j = 0; j < this->data.busyTimes.size(); j++)
+			this->data.data_vector.at(i).busyTimes.at(j) /= this->data.data_vector.at(i).batch_time;
+
+		for (int j = 0; j < this->data.idleProb.size(); j++)
+			this->data.data_vector.at(i).idleProb.at(j) /= this->data.data_vector.at(i).batch_time;
+
+		for (int j = 0; j < this->data.inputRate.size(); j++)
+			this->data.data_vector.at(i).inputRate.at(j) = this->data.data_vector.at(i).batch_time / this->data.data_vector.at(i).productionAmount.at(j);
+
+		for (int j = 0; j < this->data.queueOccupancy.size(); j++)
+			this->data.data_vector.at(i).queueOccupancy.at(j) /= this->data.data_vector.at(i).batch_time;
+
+		for (int j = 0; j < this->data.itemsInSystem.size(); j++)
+			this->data.data_vector.at(i).itemsInSystem.at(j) /= this->data.data_vector.at(i).batch_time;
+
+		for (int j = 1; j < this->data.queueOccupancy.size(); j++)
+			this->data.data_vector.at(i).itemsInSystem.at(this->data.queueMapping.at(j)) += this->data.data_vector.at(i).queueOccupancy.at(j);
+
+		for (int j = 0; j < this->data.averageTime.size(); j++)
+			this->data.data_vector.at(i).averageTime.at(j) /= this->data.data_vector.at(i).productionAmount.at(j);
+	}
 }
 
 /*
@@ -105,20 +203,20 @@ void Simulator::launchSimulator()
 */
 Simulator::~Simulator()
 {
-	this->parameters.boba_fet->~FET();
+	this->data.boba_fet->~FET();
 
 	clearParams();
 
-	this->parameters.queues.~vector();
-	this->parameters.agents.~vector();
-	this->parameters.solutions.~vector();
-	this->parameters.generators.~vector();
-	this->parameters.entityData.~vector();
-	this->parameters.idle.~vector();
-	this->parameters.busyTimes.~vector();
-	this->parameters.queueOccupancy.~vector();
-	this->parameters.idleProb.~vector();
-	this->parameters.productionAmount.~vector();
+	this->data.queues.~vector();
+	this->data.agents.~vector();
+	this->data.solutions.~vector();
+	this->data.generators.~vector();
+	this->data.entityData.~vector();
+	this->data.idle.~vector();
+	this->data.busyTimes.~vector();
+	this->data.queueOccupancy.~vector();
+	this->data.idleProb.~vector();
+	this->data.productionAmount.~vector();
 }
 
 /*
@@ -134,17 +232,17 @@ int Simulator::init()
 	clearParams();
 
 	// Seting Queues up:
-	this->parameters.queues = { 0, 0, 0, 0, 0 };
+	this->data.queues = { 0, 0, 0, 0, 0 };
 
-	this->parameters.busyTimes.assign(this->parameters.queues.begin(), this->parameters.queues.end());
-	this->parameters.queueOccupancy.assign(this->parameters.queues.begin(), this->parameters.queues.end());
-	this->parameters.idleProb.assign(this->parameters.queues.begin(), this->parameters.queues.end());
-	this->parameters.productionAmount = { 0, 0, 0, 0, 0, 0, 0 };
-	this->parameters.inputRate.assign(this->parameters.productionAmount.begin(), this->parameters.productionAmount.end());
-	this->parameters.itemsInSystem.assign(this->parameters.productionAmount.begin(), this->parameters.productionAmount.end());
-	this->parameters.averageTime.assign(this->parameters.productionAmount.begin(), this->parameters.productionAmount.end());
-	this->parameters.inputTimes = { {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0} };
-	this->parameters.queueMapping = { Component1, Component1, Component1, Component2, Component3 };
+	this->data.busyTimes.assign(this->data.queues.begin(), this->data.queues.end());
+	this->data.queueOccupancy.assign(this->data.queues.begin(), this->data.queues.end());
+	this->data.idleProb.assign(this->data.queues.begin(), this->data.queues.end());
+	this->data.productionAmount = { 0, 0, 0, 0, 0, 0, 0 };
+	this->data.inputRate.assign(this->data.productionAmount.begin(), this->data.productionAmount.end());
+	this->data.itemsInSystem.assign(this->data.productionAmount.begin(), this->data.productionAmount.end());
+	this->data.averageTime.assign(this->data.productionAmount.begin(), this->data.productionAmount.end());
+	this->data.inputTimes = { {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0} };
+	this->data.queueMapping = { Component1, Component1, Component1, Component2, Component3 };
 	createComponent(NoEntity, 1);
 
 	// Components
@@ -167,16 +265,16 @@ int Simulator::init()
 	std::vector<Agents> notams;
 	notams.clear();
 
-	data.push_back(this->parameters.entityData.at(Component1));
+	data.push_back(this->data.entityData.at(Component1));
 	entities =	{ Component1, Component1, Component1, NoEntity, NoEntity };
 	notams =	{    Worker1,    Worker2,    Worker3,  NoAgent,  NoAgent };
 
 	sol_ptr->setAvailable(entities);
-	sol_ptr->setOccupancy(&(this->parameters.queues));
-	sol_ptr->setInputVector(&(this->parameters.inputTimes));
+	sol_ptr->setOccupancy(&(this->data.queues));
+	sol_ptr->setInputVector(&(this->data.inputTimes));
 
 	createInspector(Inspector1, Component1, data, notams, 0, sol_ptr);
-	this->parameters.solutions.push_back(sol_ptr);
+	this->data.solutions.push_back(sol_ptr);
 
 	// Inspector 2:
 	sol_ptr = new FirstQueue();
@@ -185,17 +283,17 @@ int Simulator::init()
 	notams.clear();
 	entities.clear();
 
-	data.push_back(this->parameters.entityData.at(Component2));
-	data.push_back(this->parameters.entityData.at(Component3));
+	data.push_back(this->data.entityData.at(Component2));
+	data.push_back(this->data.entityData.at(Component3));
 	entities =	{ NoEntity, NoEntity, NoEntity, Component2, Component3 };
 	notams =	{  NoAgent,  NoAgent,  NoAgent,    Worker2,    Worker3 };
 
 	sol_ptr->setAvailable(entities);
-	sol_ptr->setOccupancy(&(this->parameters.queues));
-	sol_ptr->setInputVector(&(this->parameters.inputTimes));
+	sol_ptr->setOccupancy(&(this->data.queues));
+	sol_ptr->setInputVector(&(this->data.inputTimes));
 
 	createInspector(Inspector2, Component2, data, notams, 0, sol_ptr);
-	this->parameters.solutions.push_back(sol_ptr);
+	this->data.solutions.push_back(sol_ptr);
 
 
 	// Worker 1:
@@ -205,15 +303,15 @@ int Simulator::init()
 	notams.clear();
 	entities.clear();
 
-	data.push_back(this->parameters.entityData.at(Part1));
+	data.push_back(this->data.entityData.at(Part1));
 	entities =	{ Component1, NoEntity, NoEntity, NoEntity, NoEntity };
 	notams =	{ Inspector1 };
 
 	sol_ptr->setAvailable(entities);
-	sol_ptr->setOccupancy(&(this->parameters.queues));
+	sol_ptr->setOccupancy(&(this->data.queues));
 
 	createWorker(Worker1, Part1, data, notams, 1, sol_ptr);
-	this->parameters.solutions.push_back(sol_ptr);
+	this->data.solutions.push_back(sol_ptr);
 
 	// Worker 2:
 	sol_ptr = new WorkerQueue();
@@ -222,15 +320,15 @@ int Simulator::init()
 	notams.clear();
 	entities.clear();
 
-	data.push_back(this->parameters.entityData.at(Part2));
+	data.push_back(this->data.entityData.at(Part2));
 	entities =	{ NoEntity, Component1, NoEntity, Component2, NoEntity };
 	notams =	{ Inspector1, Inspector2 };
 
 	sol_ptr->setAvailable(entities);
-	sol_ptr->setOccupancy(&(this->parameters.queues));
+	sol_ptr->setOccupancy(&(this->data.queues));
 
 	createWorker(Worker2, Part2, data, notams, 1, sol_ptr);
-	this->parameters.solutions.push_back(sol_ptr);
+	this->data.solutions.push_back(sol_ptr);
 
 	// Worker 3:
 	sol_ptr = new WorkerQueue();
@@ -239,15 +337,15 @@ int Simulator::init()
 	notams.clear();
 	entities.clear();
 
-	data.push_back(this->parameters.entityData.at(Part3));
+	data.push_back(this->data.entityData.at(Part3));
 	entities =	{ NoEntity, NoEntity, Component1, NoEntity, Component3 };
 	notams =	{ Inspector1, Inspector2 };
 
 	sol_ptr->setAvailable(entities);
-	sol_ptr->setOccupancy(&(this->parameters.queues));
+	sol_ptr->setOccupancy(&(this->data.queues));
 
 	createWorker(Worker3, Part3, data, notams, 1, sol_ptr);
-	this->parameters.solutions.push_back(sol_ptr);
+	this->data.solutions.push_back(sol_ptr);
 
 	return 0;
 }
@@ -269,29 +367,29 @@ int Simulator::simPass()
 	eventData.clear();
 
 	agentState_st state;
-	this->parameters.priorQueueState = this->parameters.queues;
+	this->data.priorQueueState = this->data.queues;
 
-	this->parameters.deltaTime = this->parameters.modelTime;
+	this->data.deltaTime = this->data.modelTime;
 
-	if (this->parameters.boba_fet->getNextEvent(&(this->parameters.processingEvent)))
+	if (this->data.boba_fet->getNextEvent(&(this->data.processingEvent)))
 		return 0;
 
-	this->parameters.modelTime = this->parameters.processingEvent.time;
-	this->parameters.deltaTime = this->parameters.modelTime - this->parameters.deltaTime;
+	this->data.modelTime = this->data.processingEvent.time;
+	this->data.deltaTime = this->data.modelTime - this->data.deltaTime;
 	updateStats();
 
-	for (int i = 0; i < this->parameters.agents.size(); i++) {
-		if (this->parameters.agents.at(i)->getState().agentID == this->parameters.processingEvent.agent_given) {
-			eventData = this->parameters.agents.at(i)->processEvent(this->parameters.processingEvent, this->parameters.modelTime);
-			state = this->parameters.agents.at(i)->getState();
+	for (int i = 0; i < this->data.agents.size(); i++) {
+		if (this->data.agents.at(i)->getState().agentID == this->data.processingEvent.agent_given) {
+			eventData = this->data.agents.at(i)->processEvent(this->data.processingEvent, this->data.modelTime);
+			state = this->data.agents.at(i)->getState();
 
-			if (this->parameters.idle.at(i) == 1 && state.idle != this->parameters.idle.at(i))
+			if (this->data.idle.at(i) == 1 && state.idle != this->data.idle.at(i))
 			{
 				//this->parameters.inputRate.at(state.priorEntity) += this->parameters.modelTime - state.lastProductionTime;
-				this->parameters.averageTime.at(state.priorEntity) += this->parameters.modelTime - state.lastProductionTime;
+				this->data.averageTime.at(state.priorEntity) += this->data.modelTime - state.lastProductionTime;
 			}
 
-			this->parameters.idle.at(i) = this->parameters.agents.at(i)->getState().idle;
+			this->data.idle.at(i) = this->data.agents.at(i)->getState().idle;
 
 			break;
 		}
@@ -300,24 +398,24 @@ int Simulator::simPass()
 	if (eventData.size() > 0) {
 		for (int i = 0; i < eventData.size(); i++) {
 			if (eventData.at(i).agent_given != NoAgent)
-				eventData.at(i).time_start = this->parameters.modelTime;
-				this->parameters.boba_fet->addEvent(eventData.at(i));
+				eventData.at(i).time_start = this->data.modelTime;
+				this->data.boba_fet->addEvent(eventData.at(i));
 		}
 	}
 
-	for (int i = 0; i < this->parameters.queues.size(); i++)
+	for (int i = 0; i < this->data.queues.size(); i++)
 	{
-		if (this->parameters.queues.at(i) < this->parameters.priorQueueState.at(i))
+		if (this->data.queues.at(i) < this->data.priorQueueState.at(i))
 		{
-			this->parameters.averageTime.at(this->parameters.queueMapping.at(i)) += this->parameters.modelTime - this->parameters.inputTimes.at(i).at(0);
-			for (int j = 0; j < this->parameters.inputTimes.at(i).size() - 1; j++)
-				this->parameters.inputTimes.at(i).at(j) = this->parameters.inputTimes.at(i).at(j + 1);
-			this->parameters.inputTimes.at(i).at(this->parameters.inputTimes.at(i).size() - 1) = 0;
+			this->data.averageTime.at(this->data.queueMapping.at(i)) += this->data.modelTime - this->data.inputTimes.at(i).at(0);
+			for (int j = 0; j < this->data.inputTimes.at(i).size() - 1; j++)
+				this->data.inputTimes.at(i).at(j) = this->data.inputTimes.at(i).at(j + 1);
+			this->data.inputTimes.at(i).at(this->data.inputTimes.at(i).size() - 1) = 0;
 		}
 	}
 
 #ifdef _DEBUG
-	printState();
+	//printState();
 #endif
 
 	return 1;
@@ -331,49 +429,49 @@ int Simulator::simPass()
 */
 void Simulator::printState()
 {
-	printf("Sim Time: %f\n", this->parameters.modelTime);
-	printf("Delta time: %f\n", this->parameters.deltaTime);
+	printf("Sim Time: %f\n", this->data.modelTime);
+	printf("Delta time: %f\n", this->data.deltaTime);
 	printf("Current Event:\n");
-	printf("\tAgent Value: %d\n", this->parameters.processingEvent.agent_given);
-	printf("\tEvent Value: %d\n", this->parameters.processingEvent.event_given);
-	printf("\tEvent Time : %f\n", this->parameters.processingEvent.time);
+	printf("\tAgent Value: %d\n", this->data.processingEvent.agent_given);
+	printf("\tEvent Value: %d\n", this->data.processingEvent.event_given);
+	printf("\tEvent Time : %f\n", this->data.processingEvent.time);
 	
 	printf("Idle states:\n");
-	for (int i = 0; i < this->parameters.idle.size(); i++)
-		printf("\t%d", this->parameters.idle.at(i));
+	for (int i = 0; i < this->data.idle.size(); i++)
+		printf("\t%d", this->data.idle.at(i));
 	printf("\n");
 
 	printf("Current Queue Outputs:\n");
-	for (int i = 0; i < this->parameters.queues.size(); i++)
-		printf("\t%d", this->parameters.queues.at(i));
+	for (int i = 0; i < this->data.queues.size(); i++)
+		printf("\t%d", this->data.queues.at(i));
 	printf("\n");
 
 	printf("Current Queue Wait Times\n");
-	for (int i = 0; i < this->parameters.inputTimes.size(); i ++)
+	for (int i = 0; i < this->data.inputTimes.size(); i ++)
 	{
-		for (int j = 0; j < this->parameters.inputTimes.at(i).size(); j++)
-			printf("\t%1.4f", this->parameters.inputTimes.at(i).at(j));
+		for (int j = 0; j < this->data.inputTimes.at(i).size(); j++)
+			printf("\t%1.4f", this->data.inputTimes.at(i).at(j));
 		printf("\n");
 	}
 
 	printf("Current Waits:\n");
-	for (int i = 0; i < this->parameters.averageTime.size(); i++)
-		printf("\t%1.4f", this->parameters.averageTime.at(i));
+	for (int i = 0; i < this->data.averageTime.size(); i++)
+		printf("\t%1.4f", this->data.averageTime.at(i));
 	printf("\n");
 
 	printf("Production Amounts:\n");
-	for (int i = 0; i < this->parameters.productionAmount.size(); i++)
-		printf("\t%d", this->parameters.productionAmount.at(i));
+	for (int i = 0; i < this->data.productionAmount.size(); i++)
+		printf("\t%d", this->data.productionAmount.at(i));
 	printf("\n");
 
 	printf("Time Spent In System\n");
-	for (int i = 0; i < this->parameters.itemsInSystem.size(); i++)
-		printf("\t%1.4f", this->parameters.itemsInSystem.at(i));
+	for (int i = 0; i < this->data.itemsInSystem.size(); i++)
+		printf("\t%1.4f", this->data.itemsInSystem.at(i));
 	printf("\n");
 
 	printf("Input Rates\n");
-	for (int i = 0; i < this->parameters.inputRate.size(); i++)
-		printf("\t%1.4f", this->parameters.inputRate.at(i));
+	for (int i = 0; i < this->data.inputRate.size(); i++)
+		printf("\t%1.4f", this->data.inputRate.at(i));
 	printf("\n");
 	printf("\n");
 }
@@ -384,76 +482,78 @@ void Simulator::printState()
 *	Worker and Inspector Idle and Busy Probabilities
 *	Average Queue Occupancies
 */
-void Simulator::printStats()
+void Simulator::printStats(modelData_st data)
 {
 	printf("---------------<Final Statistics>---------------\n");
-	printf("Total Time: %13.3fs\n\n", this->parameters.modelTime);
+	printf("Total Time: %13.3fs\n\n", data.batch_time);
 	printf("Production Per Minute:\n");
-	printf("\tComponent1: %5.2f comp/min\n",		this->parameters.productionAmount.at(Component1) / (this->parameters.modelTime / 60));
-	printf("\tComponent2: %5.2f comp/min\n",		this->parameters.productionAmount.at(Component2) / (this->parameters.modelTime / 60));
-	printf("\tComponent3: %5.2f comp/min\n",		this->parameters.productionAmount.at(Component3) / (this->parameters.modelTime / 60));
-	printf("\tPart1-----: %5.2f part/min\n",		this->parameters.productionAmount.at(Part1)	  / (this->parameters.modelTime / 60));
-	printf("\tPart2-----: %5.2f part/min\n",		this->parameters.productionAmount.at(Part2)	  / (this->parameters.modelTime / 60));
-	printf("\tPart3-----: %5.2f part/min\n\n",	this->parameters.productionAmount.at(Part3)	  / (this->parameters.modelTime / 60));
+	printf("\tComponent1: %5.4f comp/min\n",		data.productionAmount.at(Component1) / (data.batch_time));
+	printf("\tComponent2: %5.4f comp/min\n",		data.productionAmount.at(Component2) / (data.batch_time));
+	printf("\tComponent3: %5.4f comp/min\n",		data.productionAmount.at(Component3) / (data.batch_time));
+	printf("\tPart1-----: %5.4f part/min\n",		data.productionAmount.at(Part1)	  / (data.batch_time));
+	printf("\tPart2-----: %5.4f part/min\n",		data.productionAmount.at(Part2)	  / (data.batch_time));
+	printf("\tPart3-----: %5.4f part/min\n\n",	data.productionAmount.at(Part3)	  / (data.batch_time));
 
 	printf("Idle and Busy Probability:\n");
-	printf("\tInspector1) Idle: %1.4f, Busy: %1.4f\n",	this->parameters.idleProb.at(0), this->parameters.busyTimes.at(0));
-	printf("\tInspector2) Idle: %1.4f, Busy: %1.4f\n",	this->parameters.idleProb.at(1), this->parameters.busyTimes.at(1));
-	printf("\t   Worker1) Idle: %1.4f, Busy: %1.4f\n",	this->parameters.idleProb.at(2), this->parameters.busyTimes.at(2));
-	printf("\t   Worker2) Idle: %1.4f, Busy: %1.4f\n",	this->parameters.idleProb.at(3), this->parameters.busyTimes.at(3));
-	printf("\t   Worker3) Idle: %1.4f, Busy: %1.4f\n\n",	this->parameters.idleProb.at(4), this->parameters.busyTimes.at(4));
+	printf("\tInspector1) Idle: %1.4f, Busy: %1.4f\n",	data.idleProb.at(0), data.busyTimes.at(0));
+	printf("\tInspector2) Idle: %1.4f, Busy: %1.4f\n",	data.idleProb.at(1), data.busyTimes.at(1));
+	printf("\t   Worker1) Idle: %1.4f, Busy: %1.4f\n",	data.idleProb.at(2), data.busyTimes.at(2));
+	printf("\t   Worker2) Idle: %1.4f, Busy: %1.4f\n",	data.idleProb.at(3), data.busyTimes.at(3));
+	printf("\t   Worker3) Idle: %1.4f, Busy: %1.4f\n\n",	data.idleProb.at(4), data.busyTimes.at(4));
 
 	printf("Average Queue Occupancies:\n");
-	printf("\tQueue C1-1: %1.4f Components\n",	this->parameters.queueOccupancy.at(0));
-	printf("\tQueue C1-2: %1.4f Components\n",	this->parameters.queueOccupancy.at(1));
-	printf("\tQueue C1-3: %1.4f Components\n",	this->parameters.queueOccupancy.at(2));
-	printf("\tQueue C2-1: %1.4f Components\n",	this->parameters.queueOccupancy.at(3));
-	printf("\tQueue C3-1: %1.4f Components\n\n",	this->parameters.queueOccupancy.at(4));
+	printf("\tQueue C1-1: %1.4f Components\n",	data.queueOccupancy.at(0));
+	printf("\tQueue C1-2: %1.4f Components\n",	data.queueOccupancy.at(1));
+	printf("\tQueue C1-3: %1.4f Components\n",	data.queueOccupancy.at(2));
+	printf("\tQueue C2-1: %1.4f Components\n",	data.queueOccupancy.at(3));
+	printf("\tQueue C3-1: %1.4f Components\n\n",	data.queueOccupancy.at(4));
 
 	printf("---------------<Extra Parameters>---------------\n");
 	printf("Input Rates:\n");
-	printf("\tC1: %1.4f Component/min\n",		60 / this->parameters.inputRate.at(Component1));
-	printf("\tC2: %1.4f Component/min\n",		60 / this->parameters.inputRate.at(Component2));
-	printf("\tC3: %1.4f Component/min\n",		60 / this->parameters.inputRate.at(Component3));
-	printf("\tP1: %1.4f Part/min\n",			60 / this->parameters.inputRate.at(Part1));
-	printf("\tP2: %1.4f Part/min\n",			60 / this->parameters.inputRate.at(Part2));
-	printf("\tP3: %1.4f Part/min\n\n",		60 / this->parameters.inputRate.at(Part3));
+	printf("\tC1: %1.4f min/Component\n",		data.inputRate.at(Component1));
+	printf("\tC2: %1.4f min/Component\n",		data.inputRate.at(Component2));
+	printf("\tC3: %1.4f min/Component\n",		data.inputRate.at(Component3));
+	printf("\tP1: %1.4f min/Part\n",			data.inputRate.at(Part1));
+	printf("\tP2: %1.4f min/Part\n",			data.inputRate.at(Part2));
+	printf("\tP3: %1.4f min/Part\n\n",		data.inputRate.at(Part3));
 
 	printf("Items In System:\n");
-	printf("\tC1: %1.4f Average Components\n",	this->parameters.itemsInSystem.at(Component1));
-	printf("\tC2: %1.4f Average Components\n",	this->parameters.itemsInSystem.at(Component2));
-	printf("\tC3: %1.4f Average Components\n",	this->parameters.itemsInSystem.at(Component3));
-	printf("\tP1: %1.4f Average Parts\n",			this->parameters.itemsInSystem.at(Part1));
-	printf("\tP2: %1.4f Average Parts\n",			this->parameters.itemsInSystem.at(Part2));
-	printf("\tP3: %1.4f Average Parts\n\n",		this->parameters.itemsInSystem.at(Part3));
+	printf("\tC1: %1.4f Average Components\n",	data.itemsInSystem.at(Component1));
+	printf("\tC2: %1.4f Average Components\n",	data.itemsInSystem.at(Component2));
+	printf("\tC3: %1.4f Average Components\n",	data.itemsInSystem.at(Component3));
+	printf("\tP1: %1.4f Average Parts\n",			data.itemsInSystem.at(Part1));
+	printf("\tP2: %1.4f Average Parts\n",			data.itemsInSystem.at(Part2));
+	printf("\tP3: %1.4f Average Parts\n\n",		data.itemsInSystem.at(Part3));
 
 	printf("Average Time Spent In System\n");
-	printf("\tC1: %3.4f Average Time in Minutes\n",		this->parameters.averageTime.at(Component1) / 60);
-	printf("\tC2: %3.4f Average Time in Minutes\n",		this->parameters.averageTime.at(Component2) / 60);
-	printf("\tC3: %3.4f Average Time in Minutes\n",		this->parameters.averageTime.at(Component3) / 60);
-	printf("\tP1: %3.4f Average Time in Minutes\n",		this->parameters.averageTime.at(Part1) / 60);
-	printf("\tP2: %3.4f Average Time in Minutes\n",		this->parameters.averageTime.at(Part2) / 60);
-	printf("\tP3: %3.4f Average Time in Minutes\n\n",		this->parameters.averageTime.at(Part3) / 60);
+	printf("\tC1: %3.4f Average Time in Minutes\n",		data.averageTime.at(Component1));
+	printf("\tC2: %3.4f Average Time in Minutes\n",		data.averageTime.at(Component2));
+	printf("\tC3: %3.4f Average Time in Minutes\n",		data.averageTime.at(Component3));
+	printf("\tP1: %3.4f Average Time in Minutes\n",		data.averageTime.at(Part1));
+	printf("\tP2: %3.4f Average Time in Minutes\n",		data.averageTime.at(Part2));
+	printf("\tP3: %3.4f Average Time in Minutes\n\n",		data.averageTime.at(Part3));
 
 	printf("------------------------------------------------\n");
 	printf("Littles Law Calculation:\n");
-	printf("\tComponent 1: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Component1),
-		this->parameters.averageTime.at(Component1) / this->parameters.inputRate.at(Component1));
+	printf("\tComponent 1: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Component1),
+		data.averageTime.at(Component1) / data.inputRate.at(Component1));
 
-	printf("\tComponent 2: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Component2),
-		this->parameters.averageTime.at(Component2) / this->parameters.inputRate.at(Component2));
+	printf("\tComponent 2: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Component2),
+		data.averageTime.at(Component2) / data.inputRate.at(Component2));
 
-	printf("\tComponent 3: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Component3),
-		this->parameters.averageTime.at(Component3) / this->parameters.inputRate.at(Component3));
+	printf("\tComponent 3: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Component3),
+		data.averageTime.at(Component3) / data.inputRate.at(Component3));
 
-	printf("\tPart 1: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Part1),
-		this->parameters.averageTime.at(Part1) / this->parameters.inputRate.at(Part1));
+	printf("\tPart 1: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Part1),
+		data.averageTime.at(Part1) / data.inputRate.at(Part1));
 
-	printf("\tPart 2: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Part2),
-		this->parameters.averageTime.at(Part2) / this->parameters.inputRate.at(Part2));
+	printf("\tPart 2: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Part2),
+		data.averageTime.at(Part2) / data.inputRate.at(Part2));
 
-	printf("\tPart 3: L = %5.4f, lambda * w = %5.4f\n", this->parameters.itemsInSystem.at(Part3),
-		this->parameters.averageTime.at(Part3) / this->parameters.inputRate.at(Part3));
+	printf("\tPart 3: L = %5.4f, lambda * w = %5.4f\n", data.itemsInSystem.at(Part3),
+		data.averageTime.at(Part3) / data.inputRate.at(Part3));
+
+	printf("\n");
 
 
 
@@ -467,28 +567,28 @@ void Simulator::printStats()
 */
 void Simulator::clearParams()
 {
-	this->parameters.modelTime = 0;
-	this->parameters.deltaTime = 0;
+	this->data.modelTime = 0;
+	this->data.deltaTime = 0;
 
-	for (int i = 0; i < this->parameters.agents.size(); i++)
-		this->parameters.agents.at(i)->~Agent();
-	this->parameters.agents.clear();
+	for (int i = 0; i < this->data.agents.size(); i++)
+		this->data.agents.at(i)->~Agent();
+	this->data.agents.clear();
 
-	for (int i = 0; i < this->parameters.solutions.size(); i++)
-		this->parameters.solutions.at(i)->~QueueSolution();
-	this->parameters.solutions.clear();
+	for (int i = 0; i < this->data.solutions.size(); i++)
+		this->data.solutions.at(i)->~QueueSolution();
+	this->data.solutions.clear();
 
-	for (int i = 0; i < this->parameters.generators.size(); i++)
-		this->parameters.generators.at(i)->~NumberGenerator();
-	this->parameters.generators.clear();
+	for (int i = 0; i < this->data.generators.size(); i++)
+		this->data.generators.at(i)->~NumberGenerator();
+	this->data.generators.clear();
 
-	this->parameters.queues.clear();
-	this->parameters.entityData.clear();
-	this->parameters.idle.clear();
-	this->parameters.busyTimes.clear();
-	this->parameters.queueOccupancy.clear();
-	this->parameters.idleProb.clear();
-	this->parameters.productionAmount.clear();
+	this->data.queues.clear();
+	this->data.entityData.clear();
+	this->data.idle.clear();
+	this->data.busyTimes.clear();
+	this->data.queueOccupancy.clear();
+	this->data.idleProb.clear();
+	this->data.productionAmount.clear();
 }
 
 /*
@@ -496,9 +596,9 @@ void Simulator::clearParams()
 */
 void Simulator::setProcessingEvent(Events event_given, Agents agent_given, double time_given)
 {
-	this->parameters.processingEvent.agent_given = agent_given;
-	this->parameters.processingEvent.event_given = event_given;
-	this->parameters.processingEvent.time		 = time_given;
+	this->data.processingEvent.agent_given = agent_given;
+	this->data.processingEvent.event_given = event_given;
+	this->data.processingEvent.time		 = time_given;
 }
 
 /*
@@ -506,12 +606,12 @@ void Simulator::setProcessingEvent(Events event_given, Agents agent_given, doubl
 */
 void Simulator::createComponent(Entities entity, double lambda)
 {
-	NumberGenerator* gen_ptr = new ExponentialDist(lambda);
+	ExponentialDist* gen_ptr = new ExponentialDist(lambda);
 	struct entityData_st ent_data;
 	ent_data.entityGenerator = gen_ptr;
 	ent_data.entityType = entity;
-	this->parameters.generators.push_back(gen_ptr);
-	this->parameters.entityData.push_back(ent_data);
+	this->data.generators.push_back(gen_ptr);
+	this->data.entityData.push_back(ent_data);
 }
 
 /*
@@ -527,8 +627,6 @@ void Simulator::createInspector(Agents agent, Entities starting, std::vector<ent
 {
 	Agent* agent_ptr = new Inspector(agent, agent);
 
-	
-
 	for (int i = 0; i < data.size(); i ++)
 		agent_ptr->addToEntityList(data.at(i));
 
@@ -538,10 +636,10 @@ void Simulator::createInspector(Agents agent, Entities starting, std::vector<ent
 	agent_ptr->setQueueSolution(solution);
 	agent_ptr->setCurrentEntity(starting);
 	agent_ptr->setAgentIdle(idle_init);
-	agent_ptr->setProductionTarget(&(this->parameters.productionAmount));
+	agent_ptr->setProductionTarget(&(this->data.productionAmount));
 
-	this->parameters.agents.push_back(agent_ptr);
-	this->parameters.idle.push_back(agent_ptr->getState().idle);
+	this->data.agents.push_back(agent_ptr);
+	this->data.idle.push_back(agent_ptr->getState().idle);
 }
 
 /*
@@ -566,10 +664,10 @@ void Simulator::createWorker(Agents agent, Entities starting, std::vector<entity
 	agent_ptr->setQueueSolution(solution);
 	agent_ptr->setCurrentEntity(starting);
 	agent_ptr->setAgentIdle(idle_init);
-	agent_ptr->setProductionTarget(&(this->parameters.productionAmount));
+	agent_ptr->setProductionTarget(&(this->data.productionAmount));
 
-	this->parameters.agents.push_back(agent_ptr);
-	this->parameters.idle.push_back(agent_ptr->getState().idle);
+	this->data.agents.push_back(agent_ptr);
+	this->data.idle.push_back(agent_ptr->getState().idle);
 }
 
 //	std::vector<double> inputRate;
@@ -583,28 +681,28 @@ void Simulator::updateStats()
 {
 	Entities component = NoEntity;
 
-	for (int i = 0; i < this->parameters.agents.size(); i++) {
-		this->parameters.idleProb.at(i) += this->parameters.agents.at(i)->getState().idle * this->parameters.deltaTime;
-		this->parameters.busyTimes.at(i) += !this->parameters.agents.at(i)->getState().idle * this->parameters.deltaTime;
+	for (int i = 0; i < this->data.agents.size(); i++) {
+		this->data.idleProb.at(i) += this->data.agents.at(i)->getState().idle * this->data.deltaTime;
+		this->data.busyTimes.at(i) += !this->data.agents.at(i)->getState().idle * this->data.deltaTime;
 
 
-		if (this->parameters.agents.at(i)->newEntityProduced())
+		if (this->data.agents.at(i)->newEntityProduced())
 		{
-			component = this->parameters.agents.at(i)->getState().currentEntity;
-			this->parameters.inputRate.at(component) += this->parameters.agents.at(i)->getState().productionTime;
+			component = this->data.agents.at(i)->getState().currentEntity;
+			this->data.inputRate.at(component) += this->data.agents.at(i)->getState().productionTime;
 
-			this->parameters.averageTime.at(component) += this->parameters.agents.at(i)->getState().productionTime;
+			this->data.averageTime.at(component) += this->data.agents.at(i)->getState().productionTime;
 
-			this->parameters.itemsInSystem.at(component) += this->parameters.agents.at(i)->getState().productionTime;
+			this->data.itemsInSystem.at(component) += this->data.agents.at(i)->getState().productionTime;
 
-			component = this->parameters.agents.at(i)->getState().priorEntity;
-			this->parameters.itemsInSystem.at(component) += this->parameters.modelTime - this->parameters.agents.at(i)->getState().lastProductionTime;
+			component = this->data.agents.at(i)->getState().priorEntity;
+			this->data.itemsInSystem.at(component) += this->data.modelTime - this->data.agents.at(i)->getState().lastProductionTime;
 
 		}
 	}
 
-	for (int i = 0; i < this->parameters.queues.size(); i++)
+	for (int i = 0; i < this->data.queues.size(); i++)
 	{
-		this->parameters.queueOccupancy.at(i) += this->parameters.queues.at(i) * this->parameters.deltaTime;
+		this->data.queueOccupancy.at(i) += this->data.queues.at(i) * this->data.deltaTime;
 	}
 }

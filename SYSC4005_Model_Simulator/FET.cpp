@@ -81,7 +81,7 @@ int FET::getNextEvent(struct event_data_st* event_out)
     *event_out = this->nextEvent->data;
 
     eventNode* tmp_ptr = this->nextEvent->next;
-    this->nextEvent->~eventNode();
+    delete(this->nextEvent);
     this->nextEvent = tmp_ptr;
     tmp_ptr = nullptr;
 
@@ -102,12 +102,12 @@ FET::~FET()
     this->nextEvent = nullptr;
 
     while (temp_ptr2 != nullptr) {
-        temp_ptr1->~eventNode();
+        delete(temp_ptr1);
         temp_ptr1 = temp_ptr2;
         temp_ptr2 = temp_ptr1->next;        
     }
 
-    temp_ptr1->~eventNode();
+    delete(temp_ptr1);
     temp_ptr1 = nullptr;
   
     return;
