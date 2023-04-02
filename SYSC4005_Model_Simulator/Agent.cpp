@@ -94,7 +94,13 @@ struct entityData_st Agent::genNewEntity()
 	output.entityGenerator = nullptr;
 	output.entityType = NoEntity;
 
-	if (this->entityData.size() > 0) {
+	if (this->entityData.size() == 2)
+	{
+		double num = (double) rand() / RAND_MAX;
+		num = num * (2);
+		output = this->entityData.at((int)num);
+	}
+	else if (this->entityData.size() > 0) {
 		int num = rand() % this->entityData.size();
 		output = this->entityData.at(num);
 	}

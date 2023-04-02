@@ -146,6 +146,13 @@ void Simulator::launchSimulator()
 
 }
 
+/*
+* To whoever is reading this block of code, I'm sorry, I was short on time so I just
+* coppied and pasted code that already worked, I could probably write this better, but
+* it works enough for littles law, and the source code was built in 2 days for milestone
+* 1, also I have other projects so I'm not changing it now, this block just converts the
+* raw batch data into data used for the rest of the project
+*/
 void Simulator::calculateBatchData()
 {
 	for (int i = this->data.data_vector.size() - 1; i > 0 ; i--)
@@ -346,6 +353,9 @@ int Simulator::init()
 
 	createWorker(Worker3, Part3, data, notams, 1, sol_ptr);
 	this->data.solutions.push_back(sol_ptr);
+
+	for (int i = 0; i < this->data.generators.size(); i++)
+		this->data.generators.at(i)->setSeed(this->data.seed * (i + 10352));
 
 	return 0;
 }

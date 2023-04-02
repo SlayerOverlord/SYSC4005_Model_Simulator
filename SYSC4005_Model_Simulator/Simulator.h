@@ -27,6 +27,7 @@ struct modelParameters_st {
 
 	// Clock
 	double modelTime, deltaTime, batchTime, startupTime, batchTimer, priorBatchTimer;
+	unsigned int seed;
 
 	std::vector < modelData_st> data_vector;
 
@@ -66,6 +67,7 @@ public:
 	void launchSimulator();
 	void setBatchTime(double batchTime) { this->data.batchTime = batchTime; }
 	void setSetupTime(double setupTime) { this->data.startupTime = setupTime; }
+	void setSeed(unsigned int seed) { this->data.seed = seed; }
 	void printStats(modelData_st data);
 	void calculateBatchData();
 	std::vector<modelData_st> getBatchData() { return this->data.data_vector; }

@@ -8,6 +8,7 @@ public:
 	NumberGenerator() {}
 
 	virtual double generateNumber(int positive) = 0;
+	virtual void setSeed(int seed) = 0;
 
 	~NumberGenerator() {}
 private:
