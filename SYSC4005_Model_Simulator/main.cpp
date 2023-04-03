@@ -140,16 +140,18 @@ int main() {
 
 	for (int i = 0; i < 25; i++)
 	{
-		Simulator sim = Simulator(101100);	// How long to run the sim (10 batches + 1 startup + extra)
+		printf("Run Number: %d\n", i + 1);
+
+		Simulator sim = Simulator(50100);	// How long to run the sim (10 batches + 1 startup + extra)
 		sim.setBatchTime(10000);	// Batch length (10,000 minutes)
 		sim.setSetupTime(1000);		// Setup length (1,000 minutes)
 		sim.setSeed(10 * (i + 23645));	// Different seed for each pass
 
 		sim.launchSimulator();				// Run Simulator
 
-		sim.calculateBatchData();							// Calculate batch data to output to file
-		std::vector<modelData_st> data = sim.getBatchData();// Gathe batch data for a sim pass
-		exportToCSV(data, i + 1);					// Export the sim data
+		//sim.calculateBatchData();							// Calculate batch data to output to file
+		//std::vector<modelData_st> data = sim.getBatchData();// Gathe batch data for a sim pass
+		//exportToCSV(data, i + 1);					// Export the sim data
 	}
 
 	return 0;

@@ -68,7 +68,7 @@ void Simulator::launchSimulator()
 
 	while (this->simPass())
 	{
-		if (this->data.modelTime >= this->data.batchTimer &&
+		/*if (this->data.modelTime >= this->data.batchTimer &&
 			this->data.modelTime - this->data.deltaTime <= this->data.batchTimer)
 		{
 			modelData_st newData;
@@ -99,7 +99,7 @@ void Simulator::launchSimulator()
 			this->data.batchTimer += this->data.batchTime;
 
 			this->data.data_vector.push_back(newData);
-		}
+		}*/
 	}
 
 	this->data.deltaTime = this->data.modelTime;
@@ -237,6 +237,8 @@ Simulator::~Simulator()
 int Simulator::init()
 {
 	clearParams();
+
+	this->data.modelTime = -this->data.startupTime;
 
 	// Seting Queues up:
 	this->data.queues = { 0, 0, 0, 0, 0 };
@@ -386,20 +388,27 @@ int Simulator::simPass()
 
 	this->data.modelTime = this->data.processingEvent.time;
 	this->data.deltaTime = this->data.modelTime - this->data.deltaTime;
-	updateStats();
+
+	if (this->data.modelTime > 0)
+		updateStats();
 
 	for (int i = 0; i < this->data.agents.size(); i++) {
 		if (this->data.agents.at(i)->getState().agentID == this->data.processingEvent.agent_given) {
 			eventData = this->data.agents.at(i)->processEvent(this->data.processingEvent, this->data.modelTime);
-			state = this->data.agents.at(i)->getState();
 
-			if (this->data.idle.at(i) == 1 && state.idle != this->data.idle.at(i))
+
+			if (this->data.modelTime > 0)
 			{
-				//this->parameters.inputRate.at(state.priorEntity) += this->parameters.modelTime - state.lastProductionTime;
-				this->data.averageTime.at(state.priorEntity) += this->data.modelTime - state.lastProductionTime;
-			}
+				state = this->data.agents.at(i)->getState();
 
-			this->data.idle.at(i) = this->data.agents.at(i)->getState().idle;
+				if (this->data.idle.at(i) == 1 && state.idle != this->data.idle.at(i))
+				{
+					//this->parameters.inputRate.at(state.priorEntity) += this->parameters.modelTime - state.lastProductionTime;
+					this->data.averageTime.at(state.priorEntity) += this->data.modelTime - state.lastProductionTime;
+				}
+
+				this->data.idle.at(i) = this->data.agents.at(i)->getState().idle;
+			}
 
 			break;
 		}
@@ -413,14 +422,30 @@ int Simulator::simPass()
 		}
 	}
 
-	for (int i = 0; i < this->data.queues.size(); i++)
+	if (this->data.modelTime > 0)
 	{
-		if (this->data.queues.at(i) < this->data.priorQueueState.at(i))
+		for (int i = 0; i < this->data.queues.size(); i++)
 		{
-			this->data.averageTime.at(this->data.queueMapping.at(i)) += this->data.modelTime - this->data.inputTimes.at(i).at(0);
-			for (int j = 0; j < this->data.inputTimes.at(i).size() - 1; j++)
-				this->data.inputTimes.at(i).at(j) = this->data.inputTimes.at(i).at(j + 1);
-			this->data.inputTimes.at(i).at(this->data.inputTimes.at(i).size() - 1) = 0;
+			if (this->data.queues.at(i) < this->data.priorQueueState.at(i))
+			{
+				this->data.averageTime.at(this->data.queueMapping.at(i)) += this->data.modelTime - this->data.inputTimes.at(i).at(0);
+				for (int j = 0; j < this->data.inputTimes.at(i).size() - 1; j++)
+					this->data.inputTimes.at(i).at(j) = this->data.inputTimes.at(i).at(j + 1);
+				this->data.inputTimes.at(i).at(this->data.inputTimes.at(i).size() - 1) = 0;
+			}
+		}
+
+	}
+	else
+	{
+		for (int i = 0; i < this->data.queues.size(); i++)
+		{
+			if (this->data.queues.at(i) < this->data.priorQueueState.at(i))
+			{
+				for (int j = 0; j < this->data.inputTimes.at(i).size() - 1; j++)
+					this->data.inputTimes.at(i).at(j) = this->data.inputTimes.at(i).at(j + 1);
+				this->data.inputTimes.at(i).at(this->data.inputTimes.at(i).size() - 1) = 0;
+			}
 		}
 	}
 
