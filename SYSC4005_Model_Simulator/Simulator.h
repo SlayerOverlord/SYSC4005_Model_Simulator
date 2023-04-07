@@ -68,6 +68,10 @@ public:
 	void setBatchTime(double batchTime) { this->data.batchTime = batchTime; }
 	void setSetupTime(double setupTime) { this->data.startupTime = setupTime; }
 	void setSeed(unsigned int seed) { this->data.seed = seed; }
+	double getBufferOccupancy(int idx) { return this->data.queueOccupancy.at(idx); }
+	double getProdAmount(int part) { return this->final_stats.productionAmount.at(part) / this->final_stats.batch_time; }
+	double getWsBusyProb(int ws) { return this->final_stats.busyTimes.at(ws); }
+	double getInspIdleProb(int insp) { return this->final_stats.idleProb.at(insp); }
 	void printStats(modelData_st data);
 	void calculateBatchData();
 	std::vector<modelData_st> getBatchData() { return this->data.data_vector; }
@@ -86,5 +90,6 @@ private:
 	void createWorker(Agents agent, Entities starting, std::vector<entityData_st> data, std::vector<Agents> notams, int idle_init, QueueSolution* solution);
 
 	struct modelParameters_st data;
+	struct modelData_st final_stats;
 };
 

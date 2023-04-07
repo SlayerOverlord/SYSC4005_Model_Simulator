@@ -68,7 +68,7 @@ void Simulator::launchSimulator()
 
 	while (this->simPass())
 	{
-		/*if (this->data.modelTime >= this->data.batchTimer &&
+		if (this->data.modelTime >= this->data.batchTimer &&
 			this->data.modelTime - this->data.deltaTime <= this->data.batchTimer)
 		{
 			modelData_st newData;
@@ -99,7 +99,7 @@ void Simulator::launchSimulator()
 			this->data.batchTimer += this->data.batchTime;
 
 			this->data.data_vector.push_back(newData);
-		}*/
+		}
 	}
 
 	this->data.deltaTime = this->data.modelTime;
@@ -132,17 +132,16 @@ void Simulator::launchSimulator()
 	for (int i = 0; i < this->data.averageTime.size(); i++)
 		this->data.averageTime.at(i) /= this->data.productionAmount.at(i);
 
-	modelData_st data;
-	data.averageTime = this->data.averageTime;
-	data.batch_time = this->data.modelTime;
-	data.busyTimes = this->data.busyTimes;
-	data.idleProb = this->data.idleProb;
-	data.inputRate = this->data.inputRate;
-	data.itemsInSystem = this->data.itemsInSystem;
-	data.productionAmount = this->data.productionAmount;
-	data.queueOccupancy = this->data.queueOccupancy;
+	this->final_stats.averageTime = this->data.averageTime;
+	this->final_stats.batch_time = this->data.modelTime;
+	this->final_stats.busyTimes = this->data.busyTimes;
+	this->final_stats.idleProb = this->data.idleProb;
+	this->final_stats.inputRate = this->data.inputRate;
+	this->final_stats.itemsInSystem = this->data.itemsInSystem;
+	this->final_stats.productionAmount = this->data.productionAmount;
+	this->final_stats.queueOccupancy = this->data.queueOccupancy;
 
-	printStats(data);
+	printStats(this->final_stats);
 
 }
 
@@ -238,7 +237,7 @@ int Simulator::init()
 {
 	clearParams();
 
-	this->data.modelTime = -this->data.startupTime;
+	this->data.modelTime = 0;// -this->data.startupTime;
 
 	// Seting Queues up:
 	this->data.queues = { 0, 0, 0, 0, 0 };
@@ -450,7 +449,7 @@ int Simulator::simPass()
 	}
 
 #ifdef _DEBUG
-	//printState();
+	printState();
 #endif
 
 	return 1;
